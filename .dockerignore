@@ -1,0 +1,9 @@
+deploy/*
+github/*
+.gitignore
+.dockerignore
+Dockerfile
+LICENSE
+skaffold.yaml
+.vscode
+README.md

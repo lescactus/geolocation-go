@@ -29,5 +29,7 @@ func main() {
 	h := controllers.NewBaseHandler(mdb, rdb, ipapi)
 
 	r.Handle("/rest/v1/{ip}", handlers.LoggingHandler(os.Stdout, http.HandlerFunc(h.GetGeoIP))).Methods("GET")
+	r.Handle("/ready", handlers.LoggingHandler(os.Stdout, http.HandlerFunc(h.Healthz))).Methods("GET")
+	r.Handle("/alive", handlers.LoggingHandler(os.Stdout, http.HandlerFunc(h.Healthz))).Methods("GET")
 	log.Fatal(http.ListenAndServe(":8080", r))
 }

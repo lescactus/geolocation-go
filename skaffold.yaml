@@ -1,0 +1,17 @@
+apiVersion: skaffold/v2beta28
+kind: Config
+metadata:
+  name: geolocation-go
+build:
+  local:
+    push: false
+  artifacts:
+  - image: geolocation-go
+    docker:
+      dockerfile: Dockerfile
+deploy:
+  kubectl:
+    manifests:
+    - deploy/k8s/deployment.yaml
+    - deploy/k8s/service.yaml
+    - deploy/k8s/serviceaccount.yaml
