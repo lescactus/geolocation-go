@@ -6,6 +6,7 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"sync"
 
 	"github.com/gorilla/mux"
 	"github.com/lescactus/geolocation-go/internal/models"
@@ -32,6 +33,12 @@ func (h *BaseHandler) GetGeoIP(w http.ResponseWriter, r *http.Request) {
 	var ctx = context.Background()
 	var g *models.GeoIP
 	var err error
+	
+	// WaitGroup for cache update goroutines
+	// wg.Wait() will not be called as the Save() operation
+	// can be executed in the background after the http request has
+	// been finished.
+	var wg sync.WaitGroup
 
 	// KEEP IT SIMPLE
 	// TODO: Implement custom errors
@@ -54,10 +61,40 @@ func (h *BaseHandler) GetGeoIP(w http.ResponseWriter, r *http.Request) {
 
 			// Save the IP information in the redis and the in-memory databases
 			// for later use
-			_ = h.RedisRepo.Save(ctx, g)
-			_ = h.InMemoryRepo.Save(ctx, g)
+			wg.Add(2)
+
+			// Populate the in-memory local cache with the new value
+			go func() {
+				defer wg.Done()
+
+				if err := h.InMemoryRepo.Save(ctx, g); err != nil {
+					log.Println("Fail to cache in in-memory database: ", err)
+				}
+			}()
+
+			// Populate the Redis cache with the new value
+			go func() {
+				defer wg.Done()
+
+				if err := h.RedisRepo.Save(ctx, g); err != nil {
+					log.Println("Fail to cache in redis: ", err)
+				}
+			}()
 		} else {
 			log.Println("cache hit from redis database")
+
+			// Save the IP information in the in-memory databases
+			// for later use
+			wg.Add(1)
+
+			// Populate the in-memory local cache with the new value
+			go func() {
+				defer wg.Done()
+
+				if err := h.InMemoryRepo.Save(ctx, g); err != nil {
+					log.Println("Fail to cache in in-memory database: ", err)
+				}
+			}()
 		}
 	} else {
 		log.Println("cache hit from in-memory database")

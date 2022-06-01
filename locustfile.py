@@ -28,23 +28,18 @@ def random_ip():
 class QuickstartUser(HttpUser):
     wait_time = between(1, 2)
 
-    # @task
-    # def ready_alive(self):
-    #     self.client.get("/ready")
-    #     self.client.get("/alive")
-
-    @task
+    @task(4)
     def fixed_ip(self):
         self.client.get("/rest/v1/1.2.3.4")
         self.client.get("/rest/v1/4.5.6.7")
         self.client.get("/rest/v1/7.8.9.0")
     
-    @task(4)
+    @task(3)
     def random_fixed_ips(self):
         ip = random_fixed_ip()
         self.client.get(f"/rest/v1/{ip}")
 
-    @task(2)
+    @task
     def random_ip(self):
         ip = random_ip()
         self.client.get(f"/rest/v1/{ip}")
