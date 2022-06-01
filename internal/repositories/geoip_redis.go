@@ -52,7 +52,7 @@ func (r *redisDB) Save(ctx context.Context, geoip *models.GeoIP) error {
 
 func (r *redisDB) Get(ctx context.Context, ip string) (*models.GeoIP, error) {
 	var g models.GeoIP
-	if err := r.cache.Get(ctx, ip, g); err != nil {
+	if err := r.cache.Get(ctx, ip, &g); err != nil {
 		return nil, fmt.Errorf("error: cannot read value in redis for key: %s: %w", ip, err)
 	}
 
