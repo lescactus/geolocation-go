@@ -50,6 +50,11 @@ func (config *Config) setDefaults() {
 	config.SetDefault("APP_CONFIG_NAME", ".env")
 	config.SetDefault("APP_CONFIG_PATH", ".")
 
+	// Server configuration
+	config.SetDefault("SERVER_READ_TIMEOUT", 30*time.Second)
+	config.SetDefault("SERVER_READ_HEADER_TIMEOUT", 10*time.Second)
+	config.SetDefault("SERVER_WRITE_TIMEOUT", 30*time.Second)
+
 	// Redis configuration
 	config.SetDefault("REDIS_CONNECTION_STRING", "redis://localhost:6379")
 

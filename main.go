@@ -43,12 +43,22 @@ func main() {
 		rApi = ipapi.NewIPAPIClient(cfg.GetString("IP_API_BASE_URL"), httpClient)
 	}
 
+	// Create mux router and handler controller
 	r := mux.NewRouter()
 	h := controllers.NewBaseHandler(mdb, rdb, rApi)
+
+	// Create http server
+	s := &http.Server{
+		Addr:              cfg.GetString("APP_ADDR"),
+		Handler:           r,
+		ReadTimeout:       cfg.GetDuration("SERVER_READ_TIMEOUT"),
+		ReadHeaderTimeout: cfg.GetDuration("SERVER_READ_HEADER_TIMEOUT"),
+		WriteTimeout:      cfg.GetDuration("SERVER_WRITE_TIMEOUT"),
+	}
 
 	r.Handle("/rest/v1/{ip}", handlers.LoggingHandler(os.Stdout, http.HandlerFunc(h.GetGeoIP))).Methods("GET")
 	r.Handle("/ready", handlers.LoggingHandler(os.Stdout, http.HandlerFunc(h.Healthz))).Methods("GET")
 	r.Handle("/alive", handlers.LoggingHandler(os.Stdout, http.HandlerFunc(h.Healthz))).Methods("GET")
 	log.Println("Starting server ...")
-	log.Fatal(http.ListenAndServe(cfg.GetString("APP_ADDR"), r))
+	log.Fatal(s.ListenAndServe())
 }
