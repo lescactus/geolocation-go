@@ -2,7 +2,7 @@ package controllers
 
 import (
 	"github.com/lescactus/geolocation-go/internal/api"
-	"github.com/lescactus/geolocation-go/models"
+	"github.com/lescactus/geolocation-go/internal/models"
 )
 
 type BaseHandler struct {

@@ -7,11 +7,11 @@ import (
 
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
-	"github.com/lescactus/geolocation-go/config"
-	"github.com/lescactus/geolocation-go/controllers"
 	"github.com/lescactus/geolocation-go/internal/api"
 	"github.com/lescactus/geolocation-go/internal/api/ipapi"
-	"github.com/lescactus/geolocation-go/repositories"
+	"github.com/lescactus/geolocation-go/internal/config"
+	"github.com/lescactus/geolocation-go/internal/controllers"
+	"github.com/lescactus/geolocation-go/internal/repositories"
 )
 
 func main() {

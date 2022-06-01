@@ -8,7 +8,7 @@ import (
 
 	"github.com/go-redis/cache/v8"
 	"github.com/go-redis/redis/v8"
-	"github.com/lescactus/geolocation-go/models"
+	"github.com/lescactus/geolocation-go/internal/models"
 )
 
 const (

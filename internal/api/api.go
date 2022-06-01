@@ -4,7 +4,7 @@ import (
 	"context"
 	"sync"
 
-	"github.com/lescactus/geolocation-go/models"
+	"github.com/lescactus/geolocation-go/internal/models"
 )
 
 type GeoAPI interface {

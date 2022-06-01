@@ -8,7 +8,7 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
-	"github.com/lescactus/geolocation-go/models"
+	"github.com/lescactus/geolocation-go/internal/models"
 )
 
 const (

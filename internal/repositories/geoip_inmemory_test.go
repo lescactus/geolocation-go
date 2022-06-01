@@ -6,7 +6,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/lescactus/geolocation-go/models"
+	"github.com/lescactus/geolocation-go/internal/models"
 )
 
 func TestNewInMemoryDB(t *testing.T) {
