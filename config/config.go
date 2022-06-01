@@ -47,7 +47,6 @@ func New() *Config {
 func (config *Config) setDefaults() {
 	// Set default App configuration
 	config.SetDefault("APP_ADDR", ":8080")
-	config.SetDefault("APP_ENV", "local")
 	config.SetDefault("APP_CONFIG_NAME", ".env")
 	config.SetDefault("APP_CONFIG_PATH", ".")
 
