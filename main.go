@@ -51,7 +51,7 @@ func main() {
 	// Create http server
 	s := &http.Server{
 		Addr:              cfg.GetString("APP_ADDR"),
-		Handler:           r,
+		Handler:           handlers.RecoveryHandler(handlers.PrintRecoveryStack(true))(r), // recover from panics and print recovery stack
 		ReadTimeout:       cfg.GetDuration("SERVER_READ_TIMEOUT"),
 		ReadHeaderTimeout: cfg.GetDuration("SERVER_READ_HEADER_TIMEOUT"),
 		WriteTimeout:      cfg.GetDuration("SERVER_WRITE_TIMEOUT"),
