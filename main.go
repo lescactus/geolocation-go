@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"net/http"
+	_ "net/http/pprof"
 	"os"
 
 	"github.com/gorilla/handlers"
@@ -56,6 +57,16 @@ func main() {
 		WriteTimeout:      cfg.GetDuration("SERVER_WRITE_TIMEOUT"),
 	}
 
+	// pprof
+	if cfg.GetBool("PPROF") {
+		log.Println("Starting pprof server ...")
+		// start pprof server
+		go func() {
+			log.Println(http.ListenAndServe("localhost:6060", nil))
+		}()
+	}
+
+	// Register routes and start server
 	r.Handle("/rest/v1/{ip}", handlers.LoggingHandler(os.Stdout, http.HandlerFunc(h.GetGeoIP))).Methods("GET")
 	r.Handle("/ready", handlers.LoggingHandler(os.Stdout, http.HandlerFunc(h.Healthz))).Methods("GET")
 	r.Handle("/alive", handlers.LoggingHandler(os.Stdout, http.HandlerFunc(h.Healthz))).Methods("GET")

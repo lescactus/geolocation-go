@@ -83,3 +83,5 @@ To retrieve the country code and country name of the given IP address, `geolocat
 * `IP_API_BASE_URL` (default value: `http://ip-api.com/json/`). Base URL for the [`ip-api`](https://ip-api.com/) API. Note that https is not available with the free plan.
 
 * `HTTP_CLIENT_TIMEOUT` (default value: `15s`). Timeout value for the http client.
+
+* `PPROF` (default value: `false`). Enable the pprof server. When enable, `pprof` is available at `http://127.0.0.1:6060/debug/pprof`

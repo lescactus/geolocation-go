@@ -55,6 +55,9 @@ func (config *Config) setDefaults() {
 	config.SetDefault("SERVER_READ_HEADER_TIMEOUT", 10*time.Second)
 	config.SetDefault("SERVER_WRITE_TIMEOUT", 30*time.Second)
 
+	// pprof configuration
+	config.SetDefault("PPROF", false)
+
 	// Redis configuration
 	config.SetDefault("REDIS_CONNECTION_STRING", "redis://localhost:6379")
 
