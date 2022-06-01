@@ -3,6 +3,7 @@ package repositories
 import (
 	"context"
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/go-redis/cache/v8"
@@ -56,4 +57,11 @@ func (r *redisDB) Get(ctx context.Context, ip string) (*models.GeoIP, error) {
 	}
 
 	return &g, nil
+}
+
+// Status will retrieve the status of the Redis database.
+// It uses the (*redis.Client).Ping() function.
+func (r *redisDB) Status(ctx context.Context, wg *sync.WaitGroup, ch chan error) {
+	defer wg.Done()
+	ch <- r.client.Ping(ctx).Err()
 }

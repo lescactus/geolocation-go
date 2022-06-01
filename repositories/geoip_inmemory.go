@@ -59,8 +59,17 @@ func (m *inMemoryDB) Get(ctx context.Context, ip string) (*models.GeoIP, error) 
 		return nil, &InMemoryDBError{
 			message: "error: no value found for key",
 			key:     ip,
-		} //fmt.Errorf("error: no value found for key %s", ip)
+		}
 	}
 
 	return v, nil
+}
+
+// Status will retrieve the status of the inMemoryDB.
+func (m *inMemoryDB) Status(ctx context.Context, wg *sync.WaitGroup, ch chan error) {
+	defer wg.Done()
+
+	_, _ = m.Get(ctx, "")
+
+	ch <- nil
 }

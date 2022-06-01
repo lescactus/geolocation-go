@@ -11,6 +11,15 @@ import (
 	"github.com/lescactus/geolocation-go/models"
 )
 
+const (
+	// ContentTypeApplicationJSON represent the applcation/json Content-Type value
+	ContentTypeApplicationJSON = "application/json"
+)
+
+// GetGeoIP is the main handler.
+// It will parse the route variable to ensure it is a valid IPv4 address
+// before getting the GeoIP information for the given address.
+// It will take care of updating the caches if necessary.
 func (h *BaseHandler) GetGeoIP(w http.ResponseWriter, r *http.Request) {
 	// Get ip from URL and parse it to a net.IP
 	ip := mux.Vars(r)["ip"]
@@ -23,7 +32,7 @@ func (h *BaseHandler) GetGeoIP(w http.ResponseWriter, r *http.Request) {
 	var ctx = context.Background()
 	var g *models.GeoIP
 	var err error
-	
+
 	// KEEP IT SIMPLE
 	// TODO: Implement custom errors
 
@@ -61,6 +70,7 @@ func (h *BaseHandler) GetGeoIP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
+	w.Header().Add("Content-Type", ContentTypeApplicationJSON)
 	w.Write(resp)
 }
 

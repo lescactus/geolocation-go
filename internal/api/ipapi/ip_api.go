@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"sync"
 
 	"github.com/lescactus/geolocation-go/models"
 )
@@ -89,4 +90,32 @@ func (c *IPAPIClient) Get(ctx context.Context, ip string) (*models.GeoIP, error)
 	}
 
 	return g, nil
+}
+
+// Status will retrieve the status of ip-api.com API.
+// It will simply send a GET request to the base URL.
+func (c *IPAPIClient) Status(ctx context.Context, wg *sync.WaitGroup, ch chan error) {
+	defer wg.Done()
+
+	// Building http request
+	req, err := http.NewRequestWithContext(ctx, "GET", c.BaseURL, nil)
+	if err != nil {
+		ch <- fmt.Errorf("error: error while building http request to %s: %w", c.BaseURL, err)
+		return
+	}
+
+	// Send http request
+	resp, err := c.Client.Do(req)
+	if err != nil {
+		ch <- fmt.Errorf("error: error while sending http request to %s: %w", c.BaseURL, err)
+		return
+	}
+
+	// Ensure the response code is 200 OK
+	if resp.StatusCode != 200 {
+		ch <- fmt.Errorf("error: http response code is not 200 for http request %s: %d", c.BaseURL, resp.StatusCode)
+		return
+	}
+
+	ch <- nil
 }

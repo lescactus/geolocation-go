@@ -9,6 +9,9 @@ build:
   - image: geolocation-go
     docker:
       dockerfile: Dockerfile
+  tagPolicy:
+    dateTime:
+      format: 2006-01-02_15-04-05.999_MST
 deploy:
   kubectl:
     manifests:

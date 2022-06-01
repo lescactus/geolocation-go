@@ -1,6 +1,9 @@
 package models
 
-import "context"
+import (
+	"context"
+	"sync"
+)
 
 // GeoIP contains IP Geolocation information
 type GeoIP struct {
@@ -15,4 +18,5 @@ type GeoIP struct {
 type GeoIPRepository interface {
 	Get(ctx context.Context, ip string) (*GeoIP, error)
 	Save(ctx context.Context, geoip *GeoIP) error
+	Status(ctx context.Context, wg *sync.WaitGroup, ch chan error)
 }

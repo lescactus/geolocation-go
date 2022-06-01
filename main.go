@@ -22,8 +22,11 @@ func main() {
 		log.Fatalln(err)
 	}
 
+	// Create http client
+	httpClient := http.DefaultClient
+
 	// Create ip-api client
-	ipapi := ipapi.NewIPAPIClient(ipapi.DefaultBaseURL, http.DefaultClient)
+	ipapi := ipapi.NewIPAPIClient(ipapi.DefaultBaseURL, httpClient)
 
 	r := mux.NewRouter()
 	h := controllers.NewBaseHandler(mdb, rdb, ipapi)

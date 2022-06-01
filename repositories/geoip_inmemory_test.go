@@ -91,7 +91,7 @@ func TestInMemoryDBGet(t *testing.T) {
 	}{
 		{
 			name: "Get existing IP",
-			fields: fields{local: map[string]*models.GeoIP{"1.1.1.1": &models.GeoIP{
+			fields: fields{local: map[string]*models.GeoIP{"1.1.1.1": {
 				IP:          "1.1.1.1.",
 				CountryCode: "AU",
 				CountryName: "Australia",
@@ -112,7 +112,7 @@ func TestInMemoryDBGet(t *testing.T) {
 		},
 		{
 			name: "Get non existing IP",
-			fields: fields{local: map[string]*models.GeoIP{"1.1.1.1": &models.GeoIP{
+			fields: fields{local: map[string]*models.GeoIP{"1.1.1.1": {
 				IP:          "1.1.1.1.",
 				CountryCode: "AU",
 				CountryName: "Australia",
