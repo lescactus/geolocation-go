@@ -16,6 +16,9 @@ spec:
       containers:
       - name: geolocation-go
         image: geolocation-go
+        env:
+          - name: REDIS_CONNECTION_STRING
+            value: "redis://redis:6379"
         ports:
         - containerPort: 8080
         resources:

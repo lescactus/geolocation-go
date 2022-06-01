@@ -49,6 +49,7 @@ func (h *BaseHandler) GetGeoIP(w http.ResponseWriter, r *http.Request) {
 			if err != nil {
 				w.WriteHeader(http.StatusInternalServerError)
 				w.Write([]byte(`error: couldn't retrieve geo IP information`))
+				return
 			}
 
 			// Save the IP information in the redis and the in-memory databases
