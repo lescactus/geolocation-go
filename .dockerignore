@@ -1,9 +1,12 @@
 deploy/*
 github/*
+.git
 .gitignore
 .dockerignore
+.devcontainer
 Dockerfile
 LICENSE
 skaffold.yaml
 .vscode
 README.md
+locustfime.py
