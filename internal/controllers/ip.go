@@ -10,6 +10,7 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/lescactus/geolocation-go/internal/models"
+	"github.com/rs/zerolog/hlog"
 )
 
 const (
@@ -97,7 +98,17 @@ func (h *BaseHandler) GetGeoIP(w http.ResponseWriter, r *http.Request) {
 			}()
 		}
 	} else {
-		log.Println("cache hit from in-memory database")
+		id, ok := hlog.IDFromCtx(r.Context())
+		if !ok {
+			h.Logger.
+				Error().
+				Str("id", "no id found in request").
+				Msg("cache hit from in-memory database")
+		}
+		h.Logger.
+			Info().
+			Str("id", id.String()).
+			Msg("cache hit from in-memory database")
 	}
 
 	// Marshal the response in json format

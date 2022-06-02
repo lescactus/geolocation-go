@@ -5,6 +5,7 @@ import (
 	"net/http"
 	_ "net/http/pprof"
 	"os"
+	"time"
 
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
@@ -13,11 +14,19 @@ import (
 	"github.com/lescactus/geolocation-go/internal/config"
 	"github.com/lescactus/geolocation-go/internal/controllers"
 	"github.com/lescactus/geolocation-go/internal/repositories"
+	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/hlog"
 )
 
 func main() {
 	// Get application configuration
 	cfg := config.New()
+
+	// logger
+	zerolog.DurationFieldUnit = time.Second
+	logger := zerolog.New(os.Stdout).With().
+		Timestamp().
+		Logger()
 
 	// Create in-memory database
 	mdb := repositories.NewInMemoryDB()
@@ -46,7 +55,7 @@ func main() {
 
 	// Create mux router and handler controller
 	r := mux.NewRouter()
-	h := controllers.NewBaseHandler(mdb, rdb, rApi)
+	h := controllers.NewBaseHandler(mdb, rdb, rApi, &logger)
 
 	// Create http server
 	s := &http.Server{
@@ -59,17 +68,39 @@ func main() {
 
 	// pprof
 	if cfg.GetBool("PPROF") {
-		log.Println("Starting pprof server ...")
+		logger.Info().Msg("Starting pprof server ...")
 		// start pprof server
 		go func() {
-			log.Println(http.ListenAndServe("localhost:6060", nil))
+			if err := http.ListenAndServe("localhost:6060", nil); err != nil {
+				logger.Fatal().Err(err).Msg("Startup pprof server failed")
+			}
 		}()
 	}
 
-	// Register routes and start server
-	r.Handle("/rest/v1/{ip}", handlers.LoggingHandler(os.Stdout, http.HandlerFunc(h.GetGeoIP))).Methods("GET")
-	r.Handle("/ready", handlers.LoggingHandler(os.Stdout, http.HandlerFunc(h.Healthz))).Methods("GET")
-	r.Handle("/alive", handlers.LoggingHandler(os.Stdout, http.HandlerFunc(h.Healthz))).Methods("GET")
-	log.Println("Starting server ...")
-	log.Fatal(s.ListenAndServe())
+	// Register middleware
+	r.Use(hlog.NewHandler(logger))
+	r.Use(hlog.AccessHandler(func(r *http.Request, status, size int, duration time.Duration) {
+		hlog.FromRequest(r).Info().
+			Str("method", r.Method).
+			Stringer("url", r.URL).
+			Int("status", status).
+			Int("size", size).
+			Dur("duration", duration).
+			Msg("")
+	}))
+	r.Use(hlog.RefererHandler("referer"))
+	r.Use(hlog.RemoteAddrHandler("remote_client"))
+	r.Use(hlog.UserAgentHandler("user_agent"))
+	r.Use(hlog.RequestIDHandler("req_id", "Request-ID"))
+
+	// Register routes
+	r.HandleFunc("/rest/v1/{ip}", h.GetGeoIP).Methods("GET")
+	r.HandleFunc("/ready", h.Healthz).Methods("GET")
+	r.HandleFunc("/alive", h.Healthz).Methods("GET")
+
+	// Start server
+	logger.Info().Msg("Starting server ...")
+	if err := s.ListenAndServe(); err != nil {
+		logger.Fatal().Err(err).Msg("Startup failed")
+	}
 }
