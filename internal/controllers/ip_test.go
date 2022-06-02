@@ -3,6 +3,7 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -13,6 +14,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/lescactus/geolocation-go/internal/models"
 	"github.com/lescactus/geolocation-go/internal/repositories"
+	"github.com/stretchr/testify/assert"
 )
 
 var (
@@ -43,7 +45,7 @@ var (
 	muxRoute = "/ip/{ip}"
 )
 
-func init () {
+func init() {
 	// Make the logger silent
 	log.SetOutput(ioutil.Discard)
 }
@@ -81,6 +83,73 @@ func (m *GeoAPIMock) Get(ctx context.Context, ip string) (*models.GeoIP, error) 
 
 func (m *GeoAPIMock) Status(ctx context.Context, wg *sync.WaitGroup, ch chan error) {}
 
+func TestGetGeoIP(t *testing.T) {
+	tests := []struct {
+		name string
+		path string
+		want []byte
+		code int
+	}{
+		{
+			name: "valid path - /rest/v1/1.1.1.1",
+			path: "/rest/v1/1.1.1.1",
+			want: []byte(`{"ip":"1.1.1.1","country_code":"AU","country_name":"Australia","city":"South Brisbane","latitude":-27.4766,"longitude":153.0166}`),
+			code: 200,
+		},
+		{
+			name: "valid path - /rest/v1/2.2.2.2",
+			path: "/rest/v1/2.2.2.2",
+			want: []byte(`{"ip":"2.2.2.2","country_code":"FR","country_name":"France","city":"Paris","latitude":48.8566,"longitude":2.35222}`),
+			code: 200,
+		},
+		{
+			name: "valid path - /rest/v1/3.3.3.3",
+			path: "/rest/v1/3.3.3.3",
+			want: []byte(`{"ip":"3.3.3.3","country_code":"US","country_name":"United States","city":"Chicago","latitude":41.8781,"longitude":-87.6298}`),
+			code: 200,
+		},
+		{
+			name: "valid path - /rest/v1/4.4.4.4",
+			path: "/rest/v1/4.4.4.4",
+			want: []byte(`error: couldn't retrieve geo IP information`),
+			code: 500,
+		},
+		{
+			name: "invalid path - /rest/v1/bla",
+			path: "/rest/v1/bla",
+			want: []byte(`error: the provided IP is not a valid IPv4 address`),
+			code: 400,
+		},
+	}
+
+	r := mux.NewRouter()
+
+	// db
+	mdb := repositories.NewInMemoryDB()
+	rdb := &RedisMock{}
+	a := &GeoAPIMock{}
+
+	// route registration
+	h := NewBaseHandler(mdb, rdb, a)
+	r.HandleFunc("/rest/v1/{ip}", h.GetGeoIP).Methods("GET")
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			req := httptest.NewRequest("GET", tt.path, nil)
+			recorder := httptest.NewRecorder()
+			r.ServeHTTP(recorder, req)
+
+			resp := recorder.Result()
+			defer resp.Body.Close()
+
+			data, err := io.ReadAll(resp.Body)
+			assert.NoError(t, err)
+			assert.Equal(t, tt.want, data)
+			assert.Equal(t, tt.code, resp.StatusCode)
+		})
+	}
+}
+
 func BenchmarkGetGeoIP_EntryNotInMemoryDB_EntryInRedis(b *testing.B) {
 	route := "/ip/1.1.1.1"
 	r := mux.NewRouter()
@@ -89,7 +158,7 @@ func BenchmarkGetGeoIP_EntryNotInMemoryDB_EntryInRedis(b *testing.B) {
 	mdb := repositories.NewInMemoryDB()
 	rdb := &RedisMock{}
 
-	// route regstration
+	// route registration
 	h := NewBaseHandler(mdb, rdb, nil)
 	r.HandleFunc(muxRoute, h.GetGeoIP).Methods("GET")
 
@@ -111,7 +180,7 @@ func BenchmarkGetGeoIP_EntryNotInMemoryDB_EntryNotInRedis_EntryNotFoundByRemoteA
 	rdb := &RedisMock{}
 	a := &GeoAPIMock{}
 
-	// route regstration
+	// route registration
 	h := NewBaseHandler(mdb, rdb, a)
 	r.HandleFunc(muxRoute, h.GetGeoIP).Methods("GET")
 
@@ -133,7 +202,7 @@ func BenchmarkGetGeoIP_EntryNotInMemoryDB_EntryNotInRedis_EntryFoundByRemoteAPI(
 	rdb := &RedisMock{}
 	a := &GeoAPIMock{}
 
-	// route regstration
+	// route registration
 	h := NewBaseHandler(mdb, rdb, a)
 	r.HandleFunc(muxRoute, h.GetGeoIP).Methods("GET")
 
@@ -155,7 +224,7 @@ func BenchmarkGetGeoIP_EntryInMemoryDB_EntryInRedis(b *testing.B) {
 	rdb := &RedisMock{}
 	mdb.Save(context.Background(), &OneOneOneOne)
 
-	// route regstration
+	// route registration
 	h := NewBaseHandler(mdb, rdb, nil)
 	r.HandleFunc(muxRoute, h.GetGeoIP).Methods("GET")
 
