@@ -33,7 +33,7 @@ func (h *BaseHandler) GetGeoIP(w http.ResponseWriter, r *http.Request) {
 	var ctx = context.Background()
 	var g *models.GeoIP
 	var err error
-	
+
 	// WaitGroup for cache update goroutines
 	// wg.Wait() will not be called as the Save() operation
 	// can be executed in the background after the http request has
