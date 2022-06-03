@@ -3,6 +3,7 @@ module github.com/lescactus/geolocation-go
 go 1.16
 
 require (
+	github.com/alicebob/miniredis/v2 v2.21.0
 	github.com/go-redis/cache/v8 v8.4.3
 	github.com/go-redis/redis/v8 v8.11.5
 	github.com/gorilla/handlers v1.5.1
