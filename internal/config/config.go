@@ -62,6 +62,10 @@ func (config *Config) setDefaults() {
 	config.SetDefault("LOGGER_DURATION_FIELD_UNIT", "ms") // Available: "ms", "millisecond", "s", "second"
 	config.SetDefault("LOGGER_FORMAT", "json")            // Available: "json", "console"
 
+	// Prometheus configuration
+	config.SetDefault("PROMETHEUS", true)
+	config.SetDefault("PROMETHEUS_PATH", "/metrics")
+
 	// pprof configuration
 	config.SetDefault("PPROF", false)
 

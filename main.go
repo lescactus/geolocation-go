@@ -6,6 +6,7 @@ import (
 	_ "net/http/pprof"
 	"time"
 
+	prometheus "github.com/albertogviana/prometheus-middleware"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"github.com/lescactus/geolocation-go/internal/api"
@@ -14,6 +15,7 @@ import (
 	"github.com/lescactus/geolocation-go/internal/controllers"
 	"github.com/lescactus/geolocation-go/internal/logger"
 	"github.com/lescactus/geolocation-go/internal/repositories"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/rs/zerolog/hlog"
 )
 
@@ -97,6 +99,14 @@ func main() {
 	r.HandleFunc("/rest/v1/{ip}", h.GetGeoIP).Methods("GET")
 	r.HandleFunc("/ready", h.Healthz).Methods("GET")
 	r.HandleFunc("/alive", h.Healthz).Methods("GET")
+
+	// Prometheus middleware
+	if cfg.GetBool("PROMETHEUS") {
+		middleware := prometheus.NewPrometheusMiddleware(prometheus.Opts{})
+		r.Handle(cfg.GetString("PROMETHEUS_PATH"), promhttp.Handler())
+
+		r.Use(middleware.InstrumentHandlerDuration)
+	}
 
 	// Start server
 	logger.Info().Msg("Starting server ...")

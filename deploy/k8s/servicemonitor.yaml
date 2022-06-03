@@ -1,0 +1,15 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  labels:
+    app: geolocation-go
+    release: prometheus-operator
+  name: geolocation-go
+spec:
+  endpoints:
+    - interval: 10s
+      path: /metrics
+      port: http
+  selector:
+    matchLabels:
+      app: geolocation-go

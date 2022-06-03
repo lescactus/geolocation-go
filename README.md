@@ -81,6 +81,10 @@ To retrieve the country code and country name of the given IP address, `geolocat
 
 * `LOGGER_FORMAT` (default value: `json`). Set the logger format. Available values are "json", "console".
 
+* `PROMETHEUS` (default value: `true`). Enable publishing Prometheus metrics.
+
+* `PROMETHEUS_PATH` (default value: `/metrics`). Metrics handler path.
+
 * `REDIS_CONNECTION_STRING` (default value `redis://localhost:6379`). Connection string to connect to Redis. The format is the following: `"redis://<user>:<pass>@<host>:<port>/<db>"`.
 
 * `GEOLOCATION_API` (default value `ip-api`). Define which geolocation API to use to retrieve geo IP information. Available options are:
