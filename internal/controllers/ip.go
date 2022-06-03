@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"context"
 	"encoding/json"
 	"net"
 	"net/http"
@@ -33,7 +34,8 @@ func (h *BaseHandler) GetGeoIP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var ctx = r.Context()
+	var req_ctx = r.Context()
+	var ctx = context.Background()
 	var g *models.GeoIP
 	var err error
 
@@ -55,7 +57,7 @@ func (h *BaseHandler) GetGeoIP(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			h.Logger.Debug().Str("req_id", req_id.String()).Msg("cache miss from redis database")
 			// Query the remote GeoIP API to retrieve IP information
-			g, err = h.RemoteIPAPI.Get(ctx, ip)
+			g, err = h.RemoteIPAPI.Get(req_ctx, ip)
 			if err != nil {
 				h.Logger.Debug().Str("req_id", req_id.String()).Msg("couldn't retrieve geo IP information")
 				w.WriteHeader(http.StatusInternalServerError)
@@ -71,6 +73,7 @@ func (h *BaseHandler) GetGeoIP(w http.ResponseWriter, r *http.Request) {
 			go func() {
 				defer wg.Done()
 
+				h.Logger.Debug().Str("req_id", req_id.String()).Msg("caching in in-memory database")
 				if err := h.InMemoryRepo.Save(ctx, g); err != nil {
 					h.Logger.Error().Str("req_id", req_id.String()).Msg("fail to cache in in-memory database: " + err.Error())
 				}
@@ -80,6 +83,7 @@ func (h *BaseHandler) GetGeoIP(w http.ResponseWriter, r *http.Request) {
 			go func() {
 				defer wg.Done()
 
+				h.Logger.Debug().Str("req_id", req_id.String()).Msg("caching in redis database")
 				if err := h.RedisRepo.Save(ctx, g); err != nil {
 					h.Logger.Error().Str("req_id", req_id.String()).Msg("fail to cache in redis database: " + err.Error())
 				}
@@ -95,6 +99,7 @@ func (h *BaseHandler) GetGeoIP(w http.ResponseWriter, r *http.Request) {
 			go func() {
 				defer wg.Done()
 
+				h.Logger.Debug().Str("req_id", req_id.String()).Msg("caching in in-memory database")
 				if err := h.InMemoryRepo.Save(ctx, g); err != nil {
 					h.Logger.Error().Str("req_id", req_id.String()).Msg("fail to cache in in-memory database: " + err.Error())
 				}
