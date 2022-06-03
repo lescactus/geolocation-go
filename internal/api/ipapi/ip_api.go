@@ -9,12 +9,26 @@ import (
 	"sync"
 
 	"github.com/lescactus/geolocation-go/internal/models"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/hlog"
 )
 
 const (
 	DefaultBaseURL = "http://ip-api.com/json/" // https isn't available for free usage
+)
+
+// Prometheus metrics
+var (
+	ipAPISuccessRequestSend = promauto.NewCounter(prometheus.CounterOpts{
+		Name: "ip_api_http_requests_success_total",
+		Help: "Total number of successful http requests sent to the ip-api API",
+	})
+	ipAPIFailedRequestSend = promauto.NewCounter(prometheus.CounterOpts{
+		Name: "ip_api_http_requests_failed_total",
+		Help: "Total number of failed http requests sent to the ip-api API",
+	})
 )
 
 // IPAPIClient is an http client for the http://ip-api.com/ API.
@@ -69,8 +83,13 @@ func (c *IPAPIClient) Get(ctx context.Context, ip string) (*models.GeoIP, error)
 	if err != nil {
 		c.Logger.Error().Str("req_id", req_id.String()).
 			Msg(fmt.Sprintf("error while sending http request to %s: %s", c.BaseURL+ip, err.Error()))
+		// Increment Prometheus counter
+		ipAPIFailedRequestSend.Inc()
 		return nil, fmt.Errorf("error: error while sending http request to %s: %w", c.BaseURL+ip, err)
 	}
+
+	// Increment Prometheus counter
+	ipAPISuccessRequestSend.Inc()
 
 	// Ensure the response code is 200 OK
 	c.Logger.Trace().Str("req_id", req_id.String()).Msg("http request to " + c.BaseURL + ip + " sent")
