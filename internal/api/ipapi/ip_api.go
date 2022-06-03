@@ -9,6 +9,8 @@ import (
 	"sync"
 
 	"github.com/lescactus/geolocation-go/internal/models"
+	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/hlog"
 )
 
 const (
@@ -19,6 +21,7 @@ const (
 type IPAPIClient struct {
 	BaseURL string
 	Client  *http.Client
+	Logger  *zerolog.Logger
 }
 
 // IPAPIResponse represent the json response of the http://ip-api.com/ API.
@@ -40,35 +43,50 @@ type IPAPIResponse struct {
 	Query       string  `json:"query"`
 }
 
-func NewIPAPIClient(baseURL string, client *http.Client) *IPAPIClient {
+func NewIPAPIClient(baseURL string, client *http.Client, logger *zerolog.Logger) *IPAPIClient {
 	if baseURL == "" {
 		baseURL = DefaultBaseURL
 	}
-	return &IPAPIClient{BaseURL: baseURL, Client: client}
+	return &IPAPIClient{BaseURL: baseURL, Client: client, Logger: logger}
 }
 
 func (c *IPAPIClient) Get(ctx context.Context, ip string) (*models.GeoIP, error) {
+	// Get request id for logging purposes
+	req_id, _ := hlog.IDFromCtx(ctx)
+
 	// Building http request
+	c.Logger.Trace().Str("req_id", req_id.String()).Msg("building http request to " + c.BaseURL + ip)
 	req, err := http.NewRequestWithContext(ctx, "GET", c.BaseURL+ip, nil)
 	if err != nil {
+		c.Logger.Error().Str("req_id", req_id.String()).
+			Msg(fmt.Sprintf("error while building http request to %s: %s", c.BaseURL+ip, err.Error()))
 		return nil, fmt.Errorf("error: error while building http request to %s: %w", c.BaseURL+ip, err)
 	}
 
 	// Send http request
+	c.Logger.Debug().Str("req_id", req_id.String()).Msg("sending http request to " + c.BaseURL + ip)
 	resp, err := c.Client.Do(req)
 	if err != nil {
+		c.Logger.Error().Str("req_id", req_id.String()).
+			Msg(fmt.Sprintf("error while sending http request to %s: %s", c.BaseURL+ip, err.Error()))
 		return nil, fmt.Errorf("error: error while sending http request to %s: %w", c.BaseURL+ip, err)
 	}
 
 	// Ensure the response code is 200 OK
+	c.Logger.Trace().Str("req_id", req_id.String()).Msg("http request to " + c.BaseURL + ip + " sent")
 	if resp.StatusCode != 200 {
+		c.Logger.Error().Str("req_id", req_id.String()).
+			Msg(fmt.Sprintf("http response code is not 200 for http request %s: %d", c.BaseURL+ip, resp.StatusCode))
 		return nil, fmt.Errorf("error: http response code is not 200 for http request %s: %d", c.BaseURL+ip, resp.StatusCode)
 	}
 
 	// Read http response
+	c.Logger.Trace().Str("req_id", req_id.String()).Msg("reading http response from " + c.BaseURL + ip)
 	defer resp.Body.Close()
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
+		c.Logger.Error().Str("req_id", req_id.String()).
+			Msg(fmt.Sprintf("error while reading http response to %s: %s", c.BaseURL+ip, err.Error()))
 		return nil, fmt.Errorf("error: error while reading http response to %s: %w", c.BaseURL+ip, err)
 	}
 
@@ -76,6 +94,8 @@ func (c *IPAPIClient) Get(ctx context.Context, ip string) (*models.GeoIP, error)
 	var r IPAPIResponse
 	err = json.Unmarshal(body, &r)
 	if err != nil {
+		c.Logger.Error().Str("req_id", req_id.String()).
+			Msg(fmt.Sprintf("error while unmarshalling http request to %s: %s", c.BaseURL+ip, err))
 		return nil, fmt.Errorf("error: error while unmarshalling http request to %s: %w", c.BaseURL+ip, err)
 	}
 

@@ -47,10 +47,10 @@ func main() {
 	switch cfg.GetString("GEOLOCATION_API") {
 	case "ip-api":
 		// Create ip-api client
-		rApi = ipapi.NewIPAPIClient(cfg.GetString("IP_API_BASE_URL"), httpClient)
+		rApi = ipapi.NewIPAPIClient(cfg.GetString("IP_API_BASE_URL"), httpClient, logger)
 	default:
 		// Create ip-api client by default
-		rApi = ipapi.NewIPAPIClient(cfg.GetString("IP_API_BASE_URL"), httpClient)
+		rApi = ipapi.NewIPAPIClient(cfg.GetString("IP_API_BASE_URL"), httpClient, logger)
 	}
 
 	// Create mux router and handler controller
@@ -91,7 +91,7 @@ func main() {
 	r.Use(hlog.RefererHandler("referer"))
 	r.Use(hlog.RemoteAddrHandler("remote_client"))
 	r.Use(hlog.UserAgentHandler("user_agent"))
-	r.Use(hlog.RequestIDHandler("req_id", "Request-ID"))
+	r.Use(hlog.RequestIDHandler("req_id", "X-Request-ID"))
 
 	// Register routes
 	r.HandleFunc("/rest/v1/{ip}", h.GetGeoIP).Methods("GET")

@@ -1,7 +1,6 @@
 package controllers
 
 import (
-	"context"
 	"encoding/json"
 	"net"
 	"net/http"
@@ -34,7 +33,7 @@ func (h *BaseHandler) GetGeoIP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var ctx = context.Background()
+	var ctx = r.Context()
 	var g *models.GeoIP
 	var err error
 

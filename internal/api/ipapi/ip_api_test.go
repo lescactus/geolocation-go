@@ -4,18 +4,23 @@ import (
 	"context"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"reflect"
 	"sync"
 	"testing"
 	"time"
 
+	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/assert"
 )
+
+var logger = zerolog.New(os.Stdout).Level(zerolog.NoLevel)
 
 func TestNewIPAPIClient(t *testing.T) {
 	type args struct {
 		baseURL string
 		client  *http.Client
+		logger  *zerolog.Logger
 	}
 	tests := []struct {
 		name string
@@ -45,7 +50,7 @@ func TestNewIPAPIClient(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := NewIPAPIClient(tt.args.baseURL, tt.args.client); !reflect.DeepEqual(got, tt.want) {
+			if got := NewIPAPIClient(tt.args.baseURL, tt.args.client, tt.args.logger); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("NewIPAPIClient() = %v, want %v", got, tt.want)
 			}
 		})
@@ -69,19 +74,19 @@ func TestIPAPIClientGet(t *testing.T) {
 	defer server.Close()
 
 	// Use Client & URL from the local test server
-	c1 := NewIPAPIClient(server.URL, server.Client())
+	c1 := NewIPAPIClient(server.URL, server.Client(), &logger)
 	g1, err := c1.Get(context.Background(), "/1.1.1.1")
 	assert.NoError(t, err)
 	assert.NotEmpty(t, g1)
 
 	// Use Client & URL from the local test server
-	c2 := NewIPAPIClient(server.URL, server.Client())
+	c2 := NewIPAPIClient(server.URL, server.Client(), &logger)
 	g2, err := c2.Get(context.Background(), "/2.2.2.2")
 	assert.NoError(t, err)
 	assert.NotEmpty(t, g2)
 
 	// Use Client & URL from the local test server
-	c3 := NewIPAPIClient(server.URL, server.Client())
+	c3 := NewIPAPIClient(server.URL, server.Client(), &logger)
 	g3, err := c3.Get(context.Background(), "/invalid-path")
 	assert.Error(t, err)
 	assert.Empty(t, g3)
@@ -113,17 +118,17 @@ func TestIPAPIClientStatus(t *testing.T) {
 
 	wg.Add(3)
 	// Use Client & URL from the local test server
-	c1 := NewIPAPIClient(server.URL, server.Client())
+	c1 := NewIPAPIClient(server.URL, server.Client(), &logger)
 	c1.Status(context.TODO(), &wg, ch1)
 	assert.NoError(t, <-ch1)
 
 	// Use Client & URL from the local test server
-	c2 := NewIPAPIClient(server.URL+"/invalid-path", server.Client())
+	c2 := NewIPAPIClient(server.URL+"/invalid-path", server.Client(), &logger)
 	c2.Status(context.TODO(), &wg, ch2)
 	assert.Error(t, <-ch2)
 
 	// Use Client & URL from the local test server
-	c3 := NewIPAPIClient(server.URL+"", server.Client())
+	c3 := NewIPAPIClient(server.URL+"", server.Client(), &logger)
 	c3.Status(nil, &wg, ch3)
 	assert.Error(t, <-ch3)
 	wg.Wait()
