@@ -115,13 +115,13 @@ func TestGetGeoIP(t *testing.T) {
 		{
 			name: "valid path - /rest/v1/4.4.4.4",
 			path: "/rest/v1/4.4.4.4",
-			want: []byte(`error: couldn't retrieve geo IP information`),
+			want: []byte(`{"status":"error","msg":"Couldn't retrieve geo IP information"}`),
 			code: 500,
 		},
 		{
 			name: "invalid path - /rest/v1/bla",
 			path: "/rest/v1/bla",
-			want: []byte(`error: the provided IP is not a valid IPv4 address`),
+			want: []byte(`{"status":"error","msg":"the provided IP is not a valid IPv4 address"}`),
 			code: 400,
 		},
 	}

@@ -29,8 +29,10 @@ func (h *BaseHandler) GetGeoIP(w http.ResponseWriter, r *http.Request) {
 	ip := mux.Vars(r)["ip"]
 	if !isIpv4(ip) {
 		h.Logger.Error().Str("req_id", req_id.String()).Msg("the provided IP is not a valid IPv4 address")
+		e := NewErrorResponse("the provided IP is not a valid IPv4 address")
+		resp, _ := json.Marshal(e)
 		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte(`error: the provided IP is not a valid IPv4 address`))
+		w.Write(resp)
 		return
 	}
 
@@ -60,8 +62,10 @@ func (h *BaseHandler) GetGeoIP(w http.ResponseWriter, r *http.Request) {
 			g, err = h.RemoteIPAPI.Get(req_ctx, ip)
 			if err != nil {
 				h.Logger.Debug().Str("req_id", req_id.String()).Msg("couldn't retrieve geo IP information")
+				e := NewErrorResponse("Couldn't retrieve geo IP information")
+				resp, _ := json.Marshal(e)
 				w.WriteHeader(http.StatusInternalServerError)
-				w.Write([]byte(`error: couldn't retrieve geo IP information`))
+				w.Write(resp)
 				return
 			}
 
@@ -113,8 +117,10 @@ func (h *BaseHandler) GetGeoIP(w http.ResponseWriter, r *http.Request) {
 	resp, err := json.Marshal(g)
 	if err != nil {
 		h.Logger.Error().Str("req_id", req_id.String()).Msg("couldn't marshal geo IP information")
+		e := NewErrorResponse("couldn't marshal geo IP information")
+		resp, _ := json.Marshal(e)
 		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(`error: couldn't marshal geo IP information`))
+		w.Write(resp)
 	}
 
 	w.WriteHeader(http.StatusOK)
