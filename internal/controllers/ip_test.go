@@ -8,12 +8,14 @@ import (
 	"log"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"sync"
 	"testing"
 
 	"github.com/gorilla/mux"
 	"github.com/lescactus/geolocation-go/internal/models"
 	"github.com/lescactus/geolocation-go/internal/repositories"
+	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -43,6 +45,8 @@ var (
 		Longitude:   -87.6298,
 	}
 	muxRoute = "/ip/{ip}"
+
+	logger = zerolog.New(os.Stdout).Level(zerolog.NoLevel)
 )
 
 func init() {
@@ -130,7 +134,7 @@ func TestGetGeoIP(t *testing.T) {
 	a := &GeoAPIMock{}
 
 	// route registration
-	h := NewBaseHandler(mdb, rdb, a)
+	h := NewBaseHandler(mdb, rdb, a, &logger)
 	r.HandleFunc("/rest/v1/{ip}", h.GetGeoIP).Methods("GET")
 
 	for _, tt := range tests {
@@ -159,7 +163,7 @@ func BenchmarkGetGeoIP_EntryNotInMemoryDB_EntryInRedis(b *testing.B) {
 	rdb := &RedisMock{}
 
 	// route registration
-	h := NewBaseHandler(mdb, rdb, nil)
+	h := NewBaseHandler(mdb, rdb, nil, &logger)
 	r.HandleFunc(muxRoute, h.GetGeoIP).Methods("GET")
 
 	req, _ := http.NewRequest("GET", route, nil)
@@ -181,7 +185,7 @@ func BenchmarkGetGeoIP_EntryNotInMemoryDB_EntryNotInRedis_EntryNotFoundByRemoteA
 	a := &GeoAPIMock{}
 
 	// route registration
-	h := NewBaseHandler(mdb, rdb, a)
+	h := NewBaseHandler(mdb, rdb, a, &logger)
 	r.HandleFunc(muxRoute, h.GetGeoIP).Methods("GET")
 
 	req, _ := http.NewRequest("GET", route, nil)
@@ -203,7 +207,7 @@ func BenchmarkGetGeoIP_EntryNotInMemoryDB_EntryNotInRedis_EntryFoundByRemoteAPI(
 	a := &GeoAPIMock{}
 
 	// route registration
-	h := NewBaseHandler(mdb, rdb, a)
+	h := NewBaseHandler(mdb, rdb, a, &logger)
 	r.HandleFunc(muxRoute, h.GetGeoIP).Methods("GET")
 
 	req, _ := http.NewRequest("GET", route, nil)
@@ -225,7 +229,7 @@ func BenchmarkGetGeoIP_EntryInMemoryDB_EntryInRedis(b *testing.B) {
 	mdb.Save(context.Background(), &OneOneOneOne)
 
 	// route registration
-	h := NewBaseHandler(mdb, rdb, nil)
+	h := NewBaseHandler(mdb, rdb, nil, &logger)
 	r.HandleFunc(muxRoute, h.GetGeoIP).Methods("GET")
 
 	req, _ := http.NewRequest("GET", route, nil)

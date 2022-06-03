@@ -75,6 +75,12 @@ To retrieve the country code and country name of the given IP address, `geolocat
 
 * `SERVER_WRITE_TIMEOUT` (default value: `30s`). Maximum duration before timing out writes of the response (`WriteTimeout`).
 
+* `LOGGER_LOG_LEVEL` (default value: `info`). Logger log level. Available values are  "trace", "debug", "info", "warn", "error", "fatal", "panic" [ref](https://pkg.go.dev/github.com/rs/zerolog@v1.26.1#pkg-variables)
+
+* `LOGGER_DURATION_FIELD_UNIT` (default value: `ms`). Set the logger unit for `time.Duration` type fields. Available values are "ms", "millisecond", "s", "second".
+
+* `LOGGER_FORMAT` (default value: `json`). Set the logger format. Available values are "json", "console".
+
 * `REDIS_CONNECTION_STRING` (default value `redis://localhost:6379`). Connection string to connect to Redis. The format is the following: `"redis://<user>:<pass>@<host>:<port>/<db>"`.
 
 * `GEOLOCATION_API` (default value `ip-api`). Define which geolocation API to use to retrieve geo IP information. Available options are:

@@ -55,6 +55,13 @@ func (config *Config) setDefaults() {
 	config.SetDefault("SERVER_READ_HEADER_TIMEOUT", 10*time.Second)
 	config.SetDefault("SERVER_WRITE_TIMEOUT", 30*time.Second)
 
+	// Logger configuration
+	// Available: "trace", "debug", "info", "warn", "error", "fatal", "panic"
+	// ref: https://pkg.go.dev/github.com/rs/zerolog@v1.26.1#pkg-variables
+	config.SetDefault("LOGGER_LOG_LEVEL", "info")
+	config.SetDefault("LOGGER_DURATION_FIELD_UNIT", "ms") // Available: "ms", "millisecond", "s", "second"
+	config.SetDefault("LOGGER_FORMAT", "json")            // Available: "json", "console"
+
 	// pprof configuration
 	config.SetDefault("PPROF", false)
 

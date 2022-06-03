@@ -4,7 +4,6 @@ import (
 	"log"
 	"net/http"
 	_ "net/http/pprof"
-	"os"
 	"time"
 
 	"github.com/gorilla/handlers"
@@ -13,8 +12,8 @@ import (
 	"github.com/lescactus/geolocation-go/internal/api/ipapi"
 	"github.com/lescactus/geolocation-go/internal/config"
 	"github.com/lescactus/geolocation-go/internal/controllers"
+	"github.com/lescactus/geolocation-go/internal/logger"
 	"github.com/lescactus/geolocation-go/internal/repositories"
-	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/hlog"
 )
 
@@ -23,10 +22,11 @@ func main() {
 	cfg := config.New()
 
 	// logger
-	zerolog.DurationFieldUnit = time.Second
-	logger := zerolog.New(os.Stdout).With().
-		Timestamp().
-		Logger()
+	logger := logger.New(
+		cfg.GetString("LOGGER_LOG_LEVEL"),
+		cfg.GetString("LOGGER_DURATION_FIELD_UNIT"),
+		cfg.GetString("LOGGER_FORMAT"),
+	)
 
 	// Create in-memory database
 	mdb := repositories.NewInMemoryDB()
@@ -55,7 +55,7 @@ func main() {
 
 	// Create mux router and handler controller
 	r := mux.NewRouter()
-	h := controllers.NewBaseHandler(mdb, rdb, rApi, &logger)
+	h := controllers.NewBaseHandler(mdb, rdb, rApi, logger)
 
 	// Create http server
 	s := &http.Server{
@@ -78,7 +78,7 @@ func main() {
 	}
 
 	// Register middleware
-	r.Use(hlog.NewHandler(logger))
+	r.Use(hlog.NewHandler(*logger))
 	r.Use(hlog.AccessHandler(func(r *http.Request, status, size int, duration time.Duration) {
 		hlog.FromRequest(r).Info().
 			Str("method", r.Method).
