@@ -9,10 +9,24 @@ import (
 	"github.com/go-redis/cache/v8"
 	"github.com/go-redis/redis/v8"
 	"github.com/lescactus/geolocation-go/internal/models"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 )
 
 const (
 	KeyTTL = 24 * time.Hour
+)
+
+// Prometheus metrics
+var (
+	redisItemSaved = promauto.NewCounter(prometheus.CounterOpts{
+		Name: "redis_items_saved_total",
+		Help: "The total number of saved items in the redis database",
+	})
+	redisItemRead = promauto.NewCounter(prometheus.CounterOpts{
+		Name: "redis_items_read_total",
+		Help: "The total number of read items from the redis database",
+	})
 )
 
 type redisDB struct {
@@ -47,6 +61,9 @@ func (r *redisDB) Save(ctx context.Context, geoip *models.GeoIP) error {
 		return fmt.Errorf("error: cannot save value in redis: %w", err)
 	}
 
+	// Increment the Prometheus counter
+	redisItemSaved.Inc()
+
 	return nil
 }
 
@@ -55,6 +72,9 @@ func (r *redisDB) Get(ctx context.Context, ip string) (*models.GeoIP, error) {
 	if err := r.cache.Get(ctx, ip, &g); err != nil {
 		return nil, fmt.Errorf("error: cannot read value in redis for key: %s: %w", ip, err)
 	}
+
+	// Increment the Prometheus counter
+	redisItemRead.Inc()
 
 	return &g, nil
 }

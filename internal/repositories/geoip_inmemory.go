@@ -6,10 +6,24 @@ import (
 	"sync"
 
 	"github.com/lescactus/geolocation-go/internal/models"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 )
 
 var (
 	ErrInMemoryDBKeyDoesNotExists = &InMemoryDBError{"no value found for key", ""}
+)
+
+// Prometheus metrics
+var (
+	inMemoryItemSaved = promauto.NewCounter(prometheus.CounterOpts{
+		Name: "in_memory_items_saved_total",
+		Help: "The total number of saved items in the in-memory database",
+	})
+	inMemoryItemRead = promauto.NewCounter(prometheus.CounterOpts{
+		Name: "in_memory_items_read_total",
+		Help: "The total number of read items from the in-memory database",
+	})
 )
 
 type InMemoryDBError struct {
@@ -44,6 +58,9 @@ func (m *inMemoryDB) Save(ctx context.Context, geoip *models.GeoIP) error {
 
 	m.local[geoip.IP] = geoip
 
+	// Increment Prometheus counter
+	inMemoryItemSaved.Inc()
+
 	return nil
 }
 
@@ -61,6 +78,9 @@ func (m *inMemoryDB) Get(ctx context.Context, ip string) (*models.GeoIP, error) 
 			key:     ip,
 		}
 	}
+
+	// Increment Prometheus counter
+	inMemoryItemRead.Inc()
 
 	return v, nil
 }
