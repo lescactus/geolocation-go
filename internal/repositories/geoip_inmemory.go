@@ -24,6 +24,10 @@ var (
 		Name: "in_memory_items_read_total",
 		Help: "The total number of read items from the in-memory database",
 	})
+	inMemoryItemFailedRead = promauto.NewCounter(prometheus.CounterOpts{
+		Name: "in_memory_items_failed_read_total",
+		Help: "The total number of failed read items from the in-memory database",
+	})
 )
 
 type InMemoryDBError struct {
@@ -73,6 +77,8 @@ func (m *inMemoryDB) Get(ctx context.Context, ip string) (*models.GeoIP, error) 
 
 	v, b := m.local[ip]
 	if !b {
+		// Increment Prometheus counter
+		inMemoryItemFailedRead.Inc()
 		return nil, &InMemoryDBError{
 			message: "error: no value found for key",
 			key:     ip,

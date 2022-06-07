@@ -95,3 +95,34 @@ To retrieve the country code and country name of the given IP address, `geolocat
 * `HTTP_CLIENT_TIMEOUT` (default value: `15s`). Timeout value for the http client.
 
 * `PPROF` (default value: `false`). Enable the pprof server. When enable, `pprof` is available at `http://127.0.0.1:6060/debug/pprof`
+
+## Monitoring
+
+`geolocation-go` provides [Prometheus](https://prometheus.io/) metrics and comes with a [Grafana](https://grafana.com/docs/grafana/) dashboard located in `deploy/grafana/dashboard.json`.
+
+### Installation with [`kube-prometheus-stack`](https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-prometheus-stack)
+
+Install [`kube-prometheus-stack`](https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-prometheus-stack) in your Kubernetes cluster:
+
+```sh
+# Add helm repository
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+helm repo update
+
+# Install the Prometheus operator and the kube-prometheus-stack
+helm install \
+       prometheus-operator \
+       prometheus-community/kube-prometheus-stack \
+       --create-namespace \
+       --namespace monitoring
+
+# Access the Grafana web interface through http://localhost:8080/ (default credentials: admin/prom-operator)
+kubectl port-forward -n monitoring svc/prometheus-operator-grafana 8080:3000
+```
+
+To install the dashboard, go to "Menu" > "Create" > "Import" > "Upload json file" and upload `deploy/grafana/dashboard.json`.
+
+<details>
+<summary>Click to expand</summary>
+![Grafana 01 screenshot](.docs/grafana-01.png)
+</details>

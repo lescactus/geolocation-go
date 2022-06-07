@@ -23,9 +23,17 @@ var (
 		Name: "redis_items_saved_total",
 		Help: "The total number of saved items in the redis database",
 	})
+	redisItemFailedSaved = promauto.NewCounter(prometheus.CounterOpts{
+		Name: "redis_items_failed_saved_total",
+		Help: "The total number of failed saved items in the redis database",
+	})
 	redisItemRead = promauto.NewCounter(prometheus.CounterOpts{
 		Name: "redis_items_read_total",
 		Help: "The total number of read items from the redis database",
+	})
+	redisItemFailedRead = promauto.NewCounter(prometheus.CounterOpts{
+		Name: "redis_items_failed_read_total",
+		Help: "The total number of failed read items from the redis database",
 	})
 )
 
@@ -58,6 +66,8 @@ func (r *redisDB) Save(ctx context.Context, geoip *models.GeoIP) error {
 		Value: geoip,
 		TTL:   KeyTTL,
 	}); err != nil {
+		// Increment Prometheus counter
+		redisItemFailedSaved.Inc()
 		return fmt.Errorf("error: cannot save value in redis: %w", err)
 	}
 
@@ -70,6 +80,8 @@ func (r *redisDB) Save(ctx context.Context, geoip *models.GeoIP) error {
 func (r *redisDB) Get(ctx context.Context, ip string) (*models.GeoIP, error) {
 	var g models.GeoIP
 	if err := r.cache.Get(ctx, ip, &g); err != nil {
+		// Increment Prometheus counter
+		redisItemFailedRead.Inc()
 		return nil, fmt.Errorf("error: cannot read value in redis for key: %s: %w", ip, err)
 	}
 
