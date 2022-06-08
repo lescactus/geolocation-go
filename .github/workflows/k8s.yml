@@ -41,6 +41,7 @@ jobs:
 
       - name: e2e
         run: |
+          kubectl get pods -A --show-labels
           kubectl apply -f .e2e/e2e.yaml
           kubectl wait --for=condition=ready -l app=e2e pod
           kubectl logs -f -l=app=e2e
