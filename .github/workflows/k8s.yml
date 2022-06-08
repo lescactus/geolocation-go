@@ -34,11 +34,14 @@ jobs:
           echo "current-context:" $(kubectl config current-context)
           echo "environment-kubeconfig:" ${KUBECONFIG}
 
-      - name: Install skaffold
+      - name: Install and run skaffold
         run: |
           curl -Lo skaffold https://storage.googleapis.com/skaffold/releases/latest/skaffold-linux-amd64 && \
           install skaffold -m 0755 /tmp/skaffold
-
-      - name: Deploy geolocation-go
+          /tmp/skaffold run
+      
+      - name: e2e
         run: |
-          skaffold run
+          kubectl apply -f .e2e/e2e.yaml
+          kubectl wait --for=condition=ready -l app=e2e pod
+          kubectl logs -f -l=app=e2e

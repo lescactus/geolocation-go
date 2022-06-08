@@ -1,5 +1,6 @@
 deploy/*
 github/*
+.e2e
 .github
 .git
 .gitignore
