@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io"
+	"io/ioutil"
 	"net/http"
 	"sync"
 
@@ -102,7 +102,7 @@ func (c *IPAPIClient) Get(ctx context.Context, ip string) (*models.GeoIP, error)
 	// Read http response
 	c.Logger.Trace().Str("req_id", req_id.String()).Msg("reading http response from " + c.BaseURL + ip)
 	defer resp.Body.Close()
-	body, err := io.ReadAll(resp.Body)
+	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		c.Logger.Error().Str("req_id", req_id.String()).
 			Msg(fmt.Sprintf("error while reading http response to %s: %s", c.BaseURL+ip, err.Error()))
