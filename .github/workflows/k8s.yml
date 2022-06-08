@@ -38,4 +38,4 @@ jobs:
         run: |
           curl -Lo skaffold https://storage.googleapis.com/skaffold/releases/latest/skaffold-linux-amd64 && \
           install skaffold -m 0755 /tmp/skaffold
-          skaffold run
+          /tmp/skaffold run
