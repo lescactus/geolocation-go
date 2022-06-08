@@ -12,3 +12,4 @@ skaffold.yaml
 .vscode
 README.md
 locustfime.py
+!.e2e/gotest/*.go
