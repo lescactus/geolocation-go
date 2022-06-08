@@ -34,6 +34,7 @@ jobs:
         with:
           path: ~/.skaffold/
           key: fixed
+        if: ${{ always() }}
       
       - name: Skaffold run
         uses: hiberbee/github-action-skaffold@1.18.0
