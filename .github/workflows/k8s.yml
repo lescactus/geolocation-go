@@ -29,6 +29,13 @@ jobs:
           echo "current-context:" $(kubectl config current-context)
           echo "environment-kubeconfig:" ${KUBECONFIG}
       
+      - name: Cache skaffold image builds & config
+        uses: actions/cache@v2
+        with:
+          path: ~/.skaffold/
+          key: fixed
+        if: ${{ always() }}
+      
       - name: Skaffold run
         uses: hiberbee/github-action-skaffold@1.18.0
         with:

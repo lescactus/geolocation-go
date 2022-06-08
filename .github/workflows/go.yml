@@ -5,12 +5,15 @@ on:
     branches: [ "*" ]
   pull_request:
     branches: [ master ]
+  
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
 
 jobs:
   build:
     strategy:
       matrix:
-        version: [1.14, 1.15, 1.16, 1.17, 1.18]
+        version: [1.15, 1.16, 1.17, 1.18]
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
@@ -19,6 +22,7 @@ jobs:
       uses: actions/setup-go@v3
       with:
         go-version: ${{ matrix.version }}
+        cache: true
 
     - name: Build
       run: go build -v ./...
@@ -26,7 +30,7 @@ jobs:
   test:
     strategy:
         matrix:
-          version: [1.14, 1.15, 1.16, 1.17, 1.18]
+          version: [1.15, 1.16, 1.17, 1.18]
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
@@ -35,6 +39,7 @@ jobs:
       uses: actions/setup-go@v3
       with:
         go-version: ${{ matrix.version }}
+        cache: true
 
     - name: Unit tests
       run: go test -v ./...
@@ -42,7 +47,7 @@ jobs:
   race-condition:
     strategy:
       matrix:
-        version: [1.14, 1.15, 1.16, 1.17, 1.18]
+        version: [1.15, 1.16, 1.17, 1.18]
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
@@ -51,6 +56,7 @@ jobs:
       uses: actions/setup-go@v3
       with:
         go-version: ${{ matrix.version }}
+        cache: true
     
     - name: Test race condition
       run: go test -race -vet=off ./...
