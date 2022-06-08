@@ -11,4 +11,7 @@ LICENSE
 skaffold.yaml
 .vscode
 README.md
-locustfime.py
+locustfile.py
+geolocation-go
+!.e2e/gotest/*.go
+!.e2e/gotest/go.*

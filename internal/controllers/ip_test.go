@@ -3,7 +3,6 @@ package controllers
 import (
 	"context"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -146,7 +145,7 @@ func TestGetGeoIP(t *testing.T) {
 			resp := recorder.Result()
 			defer resp.Body.Close()
 
-			data, err := io.ReadAll(resp.Body)
+			data, err := ioutil.ReadAll(resp.Body)
 			assert.NoError(t, err)
 			assert.Equal(t, tt.want, data)
 			assert.Equal(t, tt.code, resp.StatusCode)
