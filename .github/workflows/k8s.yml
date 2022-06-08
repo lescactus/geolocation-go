@@ -45,8 +45,12 @@ jobs:
           command: run
           filename: skaffold-e2e.yaml
 
+      - name: e2e wait
+        run: |
+          kubectl wait --timeout=20s --for=condition=Complete -l app=e2e job
+          kubectl wait --timeout=20s --for=condition=Complete -l app=e2e-go job
+
       - name: e2e results
         run: |
-          kubectl wait --for=condition=ready -l app=e2e job
-          kubectl wait --for=condition=ready -l app=e2e-go job
           kubectl logs -l 'job-name in (e2e, e2e-go)' --prefix --tail=-1
+        if: ${{ always() }}
