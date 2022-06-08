@@ -37,16 +37,16 @@ To retrieve the country code and country name of the given IP address, `geolocat
                                                                          |                       *
                                               +------------------------+ |                       *
 +-------------+            (1)                |                        | |                       * Update in-memory cache
-|             |   GET /geolocation/{ip}       |                        | |                       *
+|             |   GET /rest/v1/{ip}           |                        | |                       *
 |             +------------------------------>|                        | |      (3)              *
-|   Client    |                               | geolocation-go         | +--------------> Redis lookup (optional)
+|   Client    |                               |     geolocation-go     | +--------------> Redis lookup (optional)
 |             |          (5)                  |                        | |                       ^ 
 |             |<------------------------------+                        | |                       *
 +-------------+       200 - OK                |                        | |                       * Update Redis cache
                                               +------------------------+ |                       *
                                                                          |                       *
                                                                          |      (4)              *
-                                                                         +--------------> https://api.ipstack.com/{ip} lookup (optional)
+                                                                         +--------------> http://ip-api.com/json/{ip} lookup (optional)
 ```
 
 1) Client make an HTTP request to `/rest/v1/{ip}`
