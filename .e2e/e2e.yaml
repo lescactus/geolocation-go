@@ -7,7 +7,7 @@ metadata:
 spec:
   containers:
   - command: ["/bin/bash", "/scripts/e2e.sh"]
-    image: centos:7
+    image: debian:11-slim
     name: e2e
     resources: {}
     volumeMounts:
@@ -34,8 +34,8 @@ data:
     set -e
     set -o pipefail
 
-    yum install -y epel-release -q >/dev/null 2>&1
-    yum install -y curl httpd-tools jq -q >/dev/null 2>&1
+    apt-get update -qq
+    apt-get install -y -qq curl jq >/dev/null
     curl -v -s -q http://geolocation-go/rest/v1/1.1.1.1 | jq -C ''
     curl -v -s -q http://geolocation-go/rest/v1/2.2.2.2 | jq -C ''
     curl -v -s -q http://geolocation-go/rest/v1/3.3.3.3 | jq -C ''
