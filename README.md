@@ -1,4 +1,4 @@
-# geolocation-go
+# geolocation-go [![Docker](https://github.com/lescactus/geolocation-go/actions/workflows/docker.yml/badge.svg)](https://github.com/lescactus/geolocation-go/actions/workflows/docker.yml) [![Go](https://github.com/lescactus/geolocation-go/actions/workflows/go.yml/badge.svg)](https://github.com/lescactus/geolocation-go/actions/workflows/go.yml) [![k8s](https://github.com/lescactus/geolocation-go/actions/workflows/k8s.yml/badge.svg)](https://github.com/lescactus/geolocation-go/actions/workflows/k8s.yml)
 
 This repository contains a simple geolocation api microservice, fast, reliable, Kubernetes friendly and ready written in go as a proof of concept.
 
