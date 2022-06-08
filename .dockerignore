@@ -1,5 +1,6 @@
 deploy/*
 github/*
+.github
 .git
 .gitignore
 .dockerignore
