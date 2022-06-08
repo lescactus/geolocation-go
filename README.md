@@ -126,3 +126,17 @@ To install the dashboard, go to "Menu" > "Create" > "Import" > "Upload json file
 <summary>Click to expand</summary>
 ![Grafana 01 screenshot](.docs/grafana-01.png)
 </details>
+
+## TODO
+
+* [ ] 404 and 405 custom handler
+
+* [ ] Provide APM & tracing 
+
+* [ ] Provide accurate cpu and memory requests/limits based on stress-test benchmarks
+
+* [ ] Use of a [PodDistruptionBudget](https://kubernetes.io/docs/tasks/run-application/configure-pdb/) and scale to multiple replicas with the use of anti-affinity rules to spread accross multiple availability zones
+
+* [ ] Provide a Swagger endpoint
+
+* [ ] Support graceful shutdowns for interrupt signals (SIGTERM)
