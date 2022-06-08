@@ -14,3 +14,4 @@ README.md
 locustfile.py
 geolocation-go
 !.e2e/gotest/*.go
+!.e2e/gotest/go.*

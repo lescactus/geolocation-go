@@ -1,6 +1,6 @@
 FROM golang:1.16-alpine as build-env
 
-ADD go.* /go/src/
+ADD .e2e/gotest/go.* /go/src/
 
 WORKDIR /go/src/
 
@@ -12,4 +12,6 @@ ARG BASE_URL=http://geolocation-go
 ENV BASE_URL ${BASE_URL}
 ENV CGO_ENABLED 0
 
-CMD [ "sh", "-c", "go test -v ./.e2e/gotest -baseurl ${BASE_URL}" ]
+WORKDIR /go/src/.e2e/gotest
+
+CMD [ "sh", "-c", "go test -v ./... -baseurl ${BASE_URL}" ]
