@@ -31,6 +31,7 @@ func (h *BaseHandler) GetGeoIP(w http.ResponseWriter, r *http.Request) {
 		h.Logger.Error().Str("req_id", req_id.String()).Msg("the provided IP is not a valid IPv4 address")
 		e := NewErrorResponse("the provided IP is not a valid IPv4 address")
 		resp, _ := json.Marshal(e)
+		w.Header().Set("Content-Type", ContentTypeApplicationJSON)
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write(resp)
 		return
@@ -64,6 +65,7 @@ func (h *BaseHandler) GetGeoIP(w http.ResponseWriter, r *http.Request) {
 				h.Logger.Debug().Str("req_id", req_id.String()).Msg("couldn't retrieve geo IP information")
 				e := NewErrorResponse("Couldn't retrieve geo IP information")
 				resp, _ := json.Marshal(e)
+				w.Header().Set("Content-Type", ContentTypeApplicationJSON)
 				w.WriteHeader(http.StatusInternalServerError)
 				w.Write(resp)
 				return
@@ -119,12 +121,13 @@ func (h *BaseHandler) GetGeoIP(w http.ResponseWriter, r *http.Request) {
 		h.Logger.Error().Str("req_id", req_id.String()).Msg("couldn't marshal geo IP information")
 		e := NewErrorResponse("couldn't marshal geo IP information")
 		resp, _ := json.Marshal(e)
+		w.Header().Set("Content-Type", ContentTypeApplicationJSON)
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write(resp)
 	}
 
+	w.Header().Set("Content-Type", ContentTypeApplicationJSON)
 	w.WriteHeader(http.StatusOK)
-	w.Header().Add("Content-Type", ContentTypeApplicationJSON)
 	w.Write(resp)
 }
 
