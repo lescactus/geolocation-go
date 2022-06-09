@@ -101,11 +101,14 @@ func main() {
 
 	// Prometheus middleware
 	if cfg.GetBool("PROMETHEUS") {
-		middleware := httpmetricsmiddleware.New(httpmetricsmiddleware.Config{
-			Recorder: metrics.NewRecorder(metrics.Config{}),
+		p := httpmetricsmiddleware.New(httpmetricsmiddleware.Config{
+			Recorder:               metrics.NewRecorder(metrics.Config{HandlerIDLabel: "path"}),
+			DisableMeasureInflight: true,
+			DisableMeasureSize:     true,
 		})
 
-		c = c.Append(std.HandlerProvider("", middleware))
+		// Reduce cardinality by setting the handler id
+		c = c.Append(std.HandlerProvider("/rest/v1/:ip", p))
 		r.Handler("GET", cfg.GetString("PROMETHEUS_PATH"), c.Then(promhttp.Handler()))
 	}
 
