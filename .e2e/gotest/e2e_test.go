@@ -8,9 +8,17 @@ import (
 	"time"
 	"flag"
 
-	"github.com/lescactus/geolocation-go/internal/models"
 	"github.com/stretchr/testify/assert"
 )
+
+type GeoIP struct {
+	IP          string  `json:"ip"`
+	CountryCode string  `json:"country_code"`
+	CountryName string  `json:"country_name"`
+	City        string  `json:"city,omitempty"`
+	Latitude    float64 `json:"latitude,omitempty"`
+	Longitude   float64 `json:"longitude,omitempty"`
+}
 
 const defaultBaseUrl = "http://127.0.0.1:8080"
 
@@ -85,7 +93,7 @@ func TestE2E(t *testing.T) {
 			}
 			defer resp.Body.Close()
 
-			var geoip *models.GeoIP
+			var geoip *GeoIP
 			data, err := ioutil.ReadAll(resp.Body)
 			assert.NoError(t, err)
 			assert.Equal(t, tt.want, data)
