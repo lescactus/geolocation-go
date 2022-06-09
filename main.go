@@ -117,9 +117,9 @@ func main() {
 	r.Handler("GET", "/ready", c.ThenFunc(h.Healthz))
 	r.Handler("GET", "/alive", c.ThenFunc(h.Healthz))
 
-	// 404 and 405 custom handlers
-	r.NotFound = http.HandlerFunc(h.NotFoundHandler)
-	r.MethodNotAllowed = http.HandlerFunc(h.MethodNotAllowedHandler)
+	// 404 and 405 custom handlers with middlewares
+	r.NotFound = c.ThenFunc(h.NotFoundHandler)
+	r.MethodNotAllowed = c.ThenFunc(h.MethodNotAllowedHandler)
 
 	// Start server
 	logger.Info().Msg("Starting server ...")

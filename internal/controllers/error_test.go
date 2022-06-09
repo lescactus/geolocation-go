@@ -107,7 +107,7 @@ func TestBaseHandlerMethodNotAllowedHandler(t *testing.T) {
 		{
 			name:   "valid method",
 			method: "GET",
-			want: []byte(`{"ip":"1.1.1.1","country_code":"AU","country_name":"Australia","city":"South Brisbane","latitude":-27.4766,"longitude":153.0166}`),
+			want:   []byte(`{"ip":"1.1.1.1","country_code":"AU","country_name":"Australia","city":"South Brisbane","latitude":-27.4766,"longitude":153.0166}`),
 			code:   http.StatusOK,
 		},
 	}
