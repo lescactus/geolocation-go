@@ -22,8 +22,8 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": 30,
-  "iteration": 1654610182072,
+  "id": 27,
+  "iteration": 1654787417353,
   "links": [],
   "liveNow": false,
   "panels": [
@@ -114,7 +114,8 @@
             "uid": "PBFA97CFB590B2093"
           },
           "exemplar": true,
-          "expr": "sum(irate(http_requests_total{namespace=\"$namespace\", service=\"$deployment\", path=\"/rest/v1/{ip}\", code=~\"^2..$\"}[$resolution])) / \nsum(irate(http_requests_total{namespace=\"$namespace\", service=\"$deployment\", path=\"/rest/v1/{ip}\"}[$resolution]))",
+          "expr": "sum(irate(http_request_duration_seconds_count{namespace=\"$namespace\", service=\"$deployment\", path=\"/rest/v1/:ip\", code=~\"^2..$\"}[$resolution])) /\nsum(irate(http_request_duration_seconds_count{namespace=\"$namespace\", service=\"$deployment\", path=\"/rest/v1/:ip\"}[$resolution]))",
+          "hide": false,
           "interval": "",
           "legendFormat": "",
           "refId": "A"
@@ -174,7 +175,7 @@
             "uid": "PBFA97CFB590B2093"
           },
           "exemplar": true,
-          "expr": "sum(irate(http_requests_total{namespace=\"$namespace\", service=\"$deployment\", path=\"/rest/v1/{ip}\"}[$resolution]))",
+          "expr": "sum(irate(http_request_duration_seconds_count{namespace=\"$namespace\", service=\"$deployment\", path=\"/rest/v1/:ip\"}[$resolution]))",
           "interval": "",
           "intervalFactor": 1,
           "legendFormat": "",
@@ -281,7 +282,7 @@
             "uid": "PBFA97CFB590B2093"
           },
           "exemplar": true,
-          "expr": "histogram_quantile(0.5, sum(irate(http_request_duration_seconds_bucket{namespace=\"$namespace\", service=\"$deployment\", path=~\"/rest/v1/{ip}\"}[$resolution])) by (le, service))",
+          "expr": "histogram_quantile(0.5, sum(irate(http_request_duration_seconds_bucket{namespace=\"$namespace\", service=\"$deployment\", path=~\"/rest/v1/:ip\"}[$resolution])) by (le, service))",
           "interval": "",
           "legendFormat": "p50",
           "refId": "A"
@@ -292,7 +293,7 @@
             "uid": "PBFA97CFB590B2093"
           },
           "exemplar": true,
-          "expr": "histogram_quantile(0.9, sum(irate(http_request_duration_seconds_bucket{namespace=\"$namespace\", service=\"$deployment\", path=~\"/rest/v1/{ip}\"}[$resolution])) by (le, service))",
+          "expr": "histogram_quantile(0.9, sum(irate(http_request_duration_seconds_bucket{namespace=\"$namespace\", service=\"$deployment\", path=~\"/rest/v1/:ip\"}[$resolution])) by (le, service))",
           "hide": false,
           "interval": "",
           "legendFormat": "p90",
@@ -304,7 +305,7 @@
             "uid": "PBFA97CFB590B2093"
           },
           "exemplar": true,
-          "expr": "histogram_quantile(0.95, sum(irate(http_request_duration_seconds_bucket{namespace=\"$namespace\", service=\"$deployment\", path=~\"/rest/v1/{ip}\"}[$resolution])) by (le, service))",
+          "expr": "histogram_quantile(0.95, sum(irate(http_request_duration_seconds_bucket{namespace=\"$namespace\", service=\"$deployment\", path=~\"/rest/v1/:ip\"}[$resolution])) by (le, service))",
           "hide": false,
           "interval": "",
           "legendFormat": "p95",
@@ -316,7 +317,7 @@
             "uid": "PBFA97CFB590B2093"
           },
           "exemplar": true,
-          "expr": "histogram_quantile(0.99, sum(irate(http_request_duration_seconds_bucket{namespace=\"$namespace\", service=\"$deployment\", path=~\"/rest/v1/{ip}\"}[$resolution])) by (le, service))",
+          "expr": "histogram_quantile(0.99, sum(irate(http_request_duration_seconds_bucket{namespace=\"$namespace\", service=\"$deployment\", path=~\"/rest/v1/:ip\"}[$resolution])) by (le, service))",
           "hide": false,
           "interval": "",
           "legendFormat": "p99",
@@ -405,7 +406,7 @@
             "uid": "PBFA97CFB590B2093"
           },
           "exemplar": false,
-          "expr": "sum(irate(http_requests_total{code=~\"^2..$\", path=\"/rest/v1/{ip}\"}[$resolution]))",
+          "expr": "sum(irate(http_request_duration_seconds_count{code=~\"^2..$\", path=\"/rest/v1/:ip\"}[$resolution]))",
           "hide": false,
           "interval": "",
           "legendFormat": "Sucess requests",
@@ -417,7 +418,7 @@
             "uid": "PBFA97CFB590B2093"
           },
           "exemplar": false,
-          "expr": "sum(irate(http_requests_total{code!~\"^2..$\", path=\"/rest/v1/{ip}\"}[$resolution]))",
+          "expr": "sum(irate(http_request_duration_seconds_count{code!~\"^2..$\", path=\"/rest/v1/:ip\"}[$resolution]))",
           "hide": false,
           "interval": "",
           "legendFormat": "Failed requests",
@@ -842,7 +843,7 @@
             "uid": "PBFA97CFB590B2093"
           },
           "exemplar": true,
-          "expr": "sum(irate(http_requests_total{namespace=\"$namespace\", service=\"$deployment\", path=\"/rest/v1/{ip}\", code=~\"^2..$\", pod=\"$pod\"}[$resolution])) / \nsum(irate(http_requests_total{namespace=\"$namespace\", service=\"$deployment\", path=\"/rest/v1/{ip}\", pod=\"$pod\"}[$resolution]))",
+          "expr": "sum(irate(http_request_duration_seconds_count{namespace=\"$namespace\", service=\"$deployment\", path=\"/rest/v1/:ip\", code=~\"^2..$\", pod=\"$pod\"}[$resolution])) / \nsum(irate(http_request_duration_seconds_count{namespace=\"$namespace\", service=\"$deployment\", path=\"/rest/v1/:ip\", pod=\"$pod\"}[$resolution]))",
           "interval": "",
           "legendFormat": "",
           "refId": "A"
@@ -902,7 +903,7 @@
             "uid": "PBFA97CFB590B2093"
           },
           "exemplar": true,
-          "expr": "sum(irate(http_requests_total{namespace=\"$namespace\", service=\"$deployment\", path=\"/rest/v1/{ip}\", pod=\"$pod\"}[$resolution]))",
+          "expr": "sum(irate(http_request_duration_seconds_count{namespace=\"$namespace\", service=\"$deployment\", path=\"/rest/v1/:ip\", pod=\"$pod\"}[$resolution]))",
           "interval": "",
           "intervalFactor": 1,
           "legendFormat": "",
@@ -993,7 +994,7 @@
             "uid": "PBFA97CFB590B2093"
           },
           "exemplar": true,
-          "expr": "histogram_quantile(0.5, sum(irate(http_request_duration_seconds_bucket{namespace=\"$namespace\", service=\"$deployment\", pod=\"$pod\", path=~\"/rest/v1/{ip}\"}[$resolution])) by (le, service))",
+          "expr": "histogram_quantile(0.5, sum(irate(http_request_duration_seconds_bucket{namespace=\"$namespace\", service=\"$deployment\", pod=\"$pod\", path=~\"/rest/v1/:ip\"}[$resolution])) by (le, service))",
           "interval": "",
           "legendFormat": "p50",
           "refId": "A"
@@ -1004,7 +1005,7 @@
             "uid": "PBFA97CFB590B2093"
           },
           "exemplar": true,
-          "expr": "histogram_quantile(0.9, sum(irate(http_request_duration_seconds_bucket{namespace=\"$namespace\", service=\"$deployment\", pod=\"$pod\", path=~\"/rest/v1/{ip}\"}[$resolution])) by (le, service))",
+          "expr": "histogram_quantile(0.9, sum(irate(http_request_duration_seconds_bucket{namespace=\"$namespace\", service=\"$deployment\", pod=\"$pod\", path=~\"/rest/v1/:ip\"}[$resolution])) by (le, service))",
           "hide": false,
           "interval": "",
           "legendFormat": "p90",
@@ -1016,7 +1017,7 @@
             "uid": "PBFA97CFB590B2093"
           },
           "exemplar": true,
-          "expr": "histogram_quantile(0.95, sum(irate(http_request_duration_seconds_bucket{namespace=\"$namespace\", service=\"$deployment\", pod=\"$pod\", path=~\"/rest/v1/{ip}\"}[$resolution])) by (le, service))",
+          "expr": "histogram_quantile(0.95, sum(irate(http_request_duration_seconds_bucket{namespace=\"$namespace\", service=\"$deployment\", pod=\"$pod\", path=~\"/rest/v1/:ip\"}[$resolution])) by (le, service))",
           "hide": false,
           "interval": "",
           "legendFormat": "p95",
@@ -1028,7 +1029,7 @@
             "uid": "PBFA97CFB590B2093"
           },
           "exemplar": true,
-          "expr": "histogram_quantile(0.99, sum(irate(http_request_duration_seconds_bucket{namespace=\"$namespace\", service=\"$deployment\", pod=\"$pod\", path=~\"/rest/v1/{ip}\"}[$resolution])) by (le, service))",
+          "expr": "histogram_quantile(0.99, sum(irate(http_request_duration_seconds_bucket{namespace=\"$namespace\", service=\"$deployment\", pod=\"$pod\", path=~\"/rest/v1/:ip\"}[$resolution])) by (le, service))",
           "hide": false,
           "interval": "",
           "legendFormat": "p99",
@@ -1117,7 +1118,7 @@
             "uid": "PBFA97CFB590B2093"
           },
           "exemplar": false,
-          "expr": "sum(irate(http_requests_total{code=~\"^2..$\", path=\"/rest/v1/{ip}\", pod=\"$pod\"}[$resolution]))",
+          "expr": "sum(irate(http_request_duration_seconds_count{code=~\"^2..$\", path=\"/rest/v1/:ip\", pod=\"$pod\"}[$resolution]))",
           "hide": false,
           "interval": "",
           "legendFormat": "Sucess requests",
@@ -1129,7 +1130,7 @@
             "uid": "PBFA97CFB590B2093"
           },
           "exemplar": false,
-          "expr": "sum(irate(http_requests_total{code!~\"^2..$\", path=\"/rest/v1/{ip}\", pod=\"$pod\"}[$resolution]))",
+          "expr": "sum(irate(http_request_duration_seconds_count{code!~\"^2..$\", path=\"/rest/v1/:ip\", pod=\"$pod\"}[$resolution]))",
           "hide": false,
           "interval": "",
           "legendFormat": "Failed requests",
@@ -1492,8 +1493,8 @@
       {
         "current": {
           "selected": false,
-          "text": "Prometheus",
-          "value": "Prometheus"
+          "text": "default",
+          "value": "default"
         },
         "hide": 0,
         "includeAll": false,
@@ -1534,7 +1535,7 @@
       },
       {
         "current": {
-          "selected": false,
+          "selected": true,
           "text": "geolocation-go",
           "value": "geolocation-go"
         },
@@ -1559,10 +1560,10 @@
         "current": {
           "selected": true,
           "text": [
-            "geolocation-go-864974b79c-tzzmz"
+            "geolocation-go-658586c6d4-vh6b6"
           ],
           "value": [
-            "geolocation-go-864974b79c-tzzmz"
+            "geolocation-go-658586c6d4-vh6b6"
           ]
         },
         "datasource": {
@@ -1659,6 +1660,6 @@
   "timezone": "",
   "title": "Geolocation-go",
   "uid": "zdZBrsrnz",
-  "version": 28,
+  "version": 2,
   "weekStart": ""
 }

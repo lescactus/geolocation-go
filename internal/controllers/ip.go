@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"sync"
 
-	"github.com/gorilla/mux"
+	"github.com/julienschmidt/httprouter"
 	"github.com/lescactus/geolocation-go/internal/models"
 	"github.com/rs/zerolog/hlog"
 )
@@ -26,7 +26,8 @@ func (h *BaseHandler) GetGeoIP(w http.ResponseWriter, r *http.Request) {
 	req_id, _ := hlog.IDFromCtx(r.Context())
 
 	// Get ip from URL and parse it to a net.IP
-	ip := mux.Vars(r)["ip"]
+	params := httprouter.ParamsFromContext(r.Context())
+	ip := params.ByName("ip")
 	if !isIpv4(ip) {
 		h.Logger.Error().Str("req_id", req_id.String()).Msg("the provided IP is not a valid IPv4 address")
 		e := NewErrorResponse("the provided IP is not a valid IPv4 address")

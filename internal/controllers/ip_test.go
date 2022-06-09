@@ -11,7 +11,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/gorilla/mux"
+	"github.com/julienschmidt/httprouter"
 	"github.com/lescactus/geolocation-go/internal/models"
 	"github.com/lescactus/geolocation-go/internal/repositories"
 	"github.com/rs/zerolog"
@@ -43,7 +43,7 @@ var (
 		Latitude:    41.8781,
 		Longitude:   -87.6298,
 	}
-	muxRoute = "/ip/{ip}"
+	muxRoute = "/ip/:ip"
 
 	logger = zerolog.New(os.Stdout).Level(zerolog.NoLevel)
 )
@@ -125,7 +125,7 @@ func TestGetGeoIP(t *testing.T) {
 		},
 	}
 
-	r := mux.NewRouter()
+	r := httprouter.New()
 
 	// db
 	mdb := repositories.NewInMemoryDB()
@@ -134,7 +134,7 @@ func TestGetGeoIP(t *testing.T) {
 
 	// route registration
 	h := NewBaseHandler(mdb, rdb, a, &logger)
-	r.HandleFunc("/rest/v1/{ip}", h.GetGeoIP).Methods("GET")
+	r.Handler("GET", "/rest/v1/:ip", http.HandlerFunc(http.HandlerFunc(h.GetGeoIP)))
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -155,7 +155,7 @@ func TestGetGeoIP(t *testing.T) {
 
 func BenchmarkGetGeoIP_EntryNotInMemoryDB_EntryInRedis(b *testing.B) {
 	route := "/ip/1.1.1.1"
-	r := mux.NewRouter()
+	r := httprouter.New()
 
 	// db
 	mdb := repositories.NewInMemoryDB()
@@ -163,7 +163,7 @@ func BenchmarkGetGeoIP_EntryNotInMemoryDB_EntryInRedis(b *testing.B) {
 
 	// route registration
 	h := NewBaseHandler(mdb, rdb, nil, &logger)
-	r.HandleFunc(muxRoute, h.GetGeoIP).Methods("GET")
+	r.Handler("GET", muxRoute, http.HandlerFunc(h.GetGeoIP))
 
 	req, _ := http.NewRequest("GET", route, nil)
 	recorder := httptest.NewRecorder()
@@ -176,7 +176,7 @@ func BenchmarkGetGeoIP_EntryNotInMemoryDB_EntryInRedis(b *testing.B) {
 
 func BenchmarkGetGeoIP_EntryNotInMemoryDB_EntryNotInRedis_EntryNotFoundByRemoteAPI(b *testing.B) {
 	route := "/ip/4.4.4.4"
-	r := mux.NewRouter()
+	r := httprouter.New()
 
 	// db
 	mdb := repositories.NewInMemoryDB()
@@ -185,7 +185,7 @@ func BenchmarkGetGeoIP_EntryNotInMemoryDB_EntryNotInRedis_EntryNotFoundByRemoteA
 
 	// route registration
 	h := NewBaseHandler(mdb, rdb, a, &logger)
-	r.HandleFunc(muxRoute, h.GetGeoIP).Methods("GET")
+	r.Handler("GET", muxRoute, http.HandlerFunc(h.GetGeoIP))
 
 	req, _ := http.NewRequest("GET", route, nil)
 	recorder := httptest.NewRecorder()
@@ -198,7 +198,7 @@ func BenchmarkGetGeoIP_EntryNotInMemoryDB_EntryNotInRedis_EntryNotFoundByRemoteA
 
 func BenchmarkGetGeoIP_EntryNotInMemoryDB_EntryNotInRedis_EntryFoundByRemoteAPI(b *testing.B) {
 	route := "/ip/3.3.3.3"
-	r := mux.NewRouter()
+	r := httprouter.New()
 
 	// db
 	mdb := repositories.NewInMemoryDB()
@@ -207,7 +207,7 @@ func BenchmarkGetGeoIP_EntryNotInMemoryDB_EntryNotInRedis_EntryFoundByRemoteAPI(
 
 	// route registration
 	h := NewBaseHandler(mdb, rdb, a, &logger)
-	r.HandleFunc(muxRoute, h.GetGeoIP).Methods("GET")
+	r.Handler("GET", muxRoute, http.HandlerFunc(h.GetGeoIP))
 
 	req, _ := http.NewRequest("GET", route, nil)
 	recorder := httptest.NewRecorder()
@@ -220,7 +220,7 @@ func BenchmarkGetGeoIP_EntryNotInMemoryDB_EntryNotInRedis_EntryFoundByRemoteAPI(
 
 func BenchmarkGetGeoIP_EntryInMemoryDB_EntryInRedis(b *testing.B) {
 	route := "/ip/1.1.1.1"
-	r := mux.NewRouter()
+	r := httprouter.New()
 
 	// db
 	mdb := repositories.NewInMemoryDB()
@@ -229,7 +229,7 @@ func BenchmarkGetGeoIP_EntryInMemoryDB_EntryInRedis(b *testing.B) {
 
 	// route registration
 	h := NewBaseHandler(mdb, rdb, nil, &logger)
-	r.HandleFunc(muxRoute, h.GetGeoIP).Methods("GET")
+	r.Handler("GET", muxRoute, http.HandlerFunc(h.GetGeoIP))
 
 	req, _ := http.NewRequest("GET", route, nil)
 	recorder := httptest.NewRecorder()

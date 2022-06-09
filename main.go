@@ -6,9 +6,9 @@ import (
 	_ "net/http/pprof"
 	"time"
 
-	prometheus "github.com/albertogviana/prometheus-middleware"
 	"github.com/gorilla/handlers"
-	"github.com/gorilla/mux"
+	"github.com/julienschmidt/httprouter"
+	"github.com/justinas/alice"
 	"github.com/lescactus/geolocation-go/internal/api"
 	"github.com/lescactus/geolocation-go/internal/api/ipapi"
 	"github.com/lescactus/geolocation-go/internal/config"
@@ -17,6 +17,9 @@ import (
 	"github.com/lescactus/geolocation-go/internal/repositories"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/rs/zerolog/hlog"
+	metrics "github.com/slok/go-http-metrics/metrics/prometheus"
+	httpmetricsmiddleware "github.com/slok/go-http-metrics/middleware"
+	"github.com/slok/go-http-metrics/middleware/std"
 )
 
 func main() {
@@ -55,9 +58,10 @@ func main() {
 		rApi = ipapi.NewIPAPIClient(cfg.GetString("IP_API_BASE_URL"), httpClient, logger)
 	}
 
-	// Create mux router and handler controller
-	r := mux.NewRouter()
+	// Create http router, middleware manager and handler controller
+	r := httprouter.New()
 	h := controllers.NewBaseHandler(mdb, rdb, rApi, logger)
+	c := alice.New()
 
 	// Create http server
 	s := &http.Server{
@@ -79,9 +83,9 @@ func main() {
 		}()
 	}
 
-	// Register middleware
-	r.Use(hlog.NewHandler(*logger))
-	r.Use(hlog.AccessHandler(func(r *http.Request, status, size int, duration time.Duration) {
+	// Register logging middleware
+	c = c.Append(hlog.NewHandler(*logger))
+	c = c.Append(hlog.AccessHandler(func(r *http.Request, status, size int, duration time.Duration) {
 		hlog.FromRequest(r).Info().
 			Str("method", r.Method).
 			Stringer("url", r.URL).
@@ -90,23 +94,32 @@ func main() {
 			Dur("duration", duration).
 			Msg("")
 	}))
-	r.Use(hlog.RefererHandler("referer"))
-	r.Use(hlog.RemoteAddrHandler("remote_client"))
-	r.Use(hlog.UserAgentHandler("user_agent"))
-	r.Use(hlog.RequestIDHandler("req_id", "X-Request-ID"))
-
-	// Register routes
-	r.HandleFunc("/rest/v1/{ip}", h.GetGeoIP).Methods("GET")
-	r.HandleFunc("/ready", h.Healthz).Methods("GET")
-	r.HandleFunc("/alive", h.Healthz).Methods("GET")
+	c = c.Append(hlog.RefererHandler("referer"))
+	c = c.Append(hlog.RemoteAddrHandler("remote_client"))
+	c = c.Append(hlog.UserAgentHandler("user_agent"))
+	c = c.Append(hlog.RequestIDHandler("req_id", "X-Request-ID"))
 
 	// Prometheus middleware
 	if cfg.GetBool("PROMETHEUS") {
-		middleware := prometheus.NewPrometheusMiddleware(prometheus.Opts{})
-		r.Handle(cfg.GetString("PROMETHEUS_PATH"), promhttp.Handler())
+		p := httpmetricsmiddleware.New(httpmetricsmiddleware.Config{
+			Recorder:               metrics.NewRecorder(metrics.Config{HandlerIDLabel: "path"}),
+			DisableMeasureInflight: true,
+			DisableMeasureSize:     true,
+		})
 
-		r.Use(middleware.InstrumentHandlerDuration)
+		// Reduce cardinality by setting the handler id
+		c = c.Append(std.HandlerProvider("/rest/v1/:ip", p))
+		r.Handler("GET", cfg.GetString("PROMETHEUS_PATH"), c.Then(promhttp.Handler()))
 	}
+
+	// Register routes
+	r.Handler("GET", "/rest/v1/:ip", c.ThenFunc(h.GetGeoIP))
+	r.Handler("GET", "/ready", c.ThenFunc(h.Healthz))
+	r.Handler("GET", "/alive", c.ThenFunc(h.Healthz))
+
+	// 404 and 405 custom handlers with middlewares
+	r.NotFound = c.ThenFunc(h.NotFoundHandler)
+	r.MethodNotAllowed = c.ThenFunc(h.MethodNotAllowedHandler)
 
 	// Start server
 	logger.Info().Msg("Starting server ...")
