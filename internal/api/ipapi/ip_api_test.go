@@ -65,6 +65,8 @@ func TestIPAPIClientGet(t *testing.T) {
 			w.Write([]byte(`{"status":"success","country":"Australia","countryCode":"AU","region":"QLD","regionName":"Queensland","city":"South Brisbane","zip":"4101","lat":-27.4766,"lon":153.0166,"timezone":"Australia/Brisbane","isp":"Cloudflare, Inc","org":"APNIC and Cloudflare DNS Resolver project","as":"AS13335 Cloudflare, Inc.","query":"1.1.1.1"}`))
 		case "/2.2.2.2":
 			w.Write([]byte(`{"status":"success","country":"France","countryCode":"FR","region":"IDF","regionName":"Île-de-France","city":"Paris","zip":"75000","lat":48.8566,"lon":2.35222,"timezone":"Europe/Paris","isp":"France Telecom Orange","org":"","as":"AS3215 Orange S.A.","query":"2.2.2.2"}`))
+		case "3.3.3.3":
+			w.Write([]byte(`thisisnotjson`))
 		default:
 			w.WriteHeader(404)
 		}
@@ -73,23 +75,46 @@ func TestIPAPIClientGet(t *testing.T) {
 	// Close the http server
 	defer server.Close()
 
-	// Use Client & URL from the local test server
-	c1 := NewIPAPIClient(server.URL, server.Client(), &logger)
-	g1, err := c1.Get(context.Background(), "/1.1.1.1")
-	assert.NoError(t, err)
-	assert.NotEmpty(t, g1)
+	t.Run("ip-api - /1.1.1.1", func(t *testing.T) {
+		// Use Client & URL from the local test server
+		c := NewIPAPIClient(server.URL, server.Client(), &logger)
+		g, err := c.Get(context.Background(), "/1.1.1.1")
+		assert.NoError(t, err)
+		assert.NotEmpty(t, g)
+	})
 
-	// Use Client & URL from the local test server
-	c2 := NewIPAPIClient(server.URL, server.Client(), &logger)
-	g2, err := c2.Get(context.Background(), "/2.2.2.2")
-	assert.NoError(t, err)
-	assert.NotEmpty(t, g2)
+	t.Run("ip-api - /2.2.2.2", func(t *testing.T) {
+		// Use Client & URL from the local test server
+		c := NewIPAPIClient(server.URL, server.Client(), &logger)
+		g, err := c.Get(context.Background(), "/2.2.2.2")
+		assert.NoError(t, err)
+		assert.NotEmpty(t, g)
+	})
 
-	// Use Client & URL from the local test server
-	c3 := NewIPAPIClient(server.URL, server.Client(), &logger)
-	g3, err := c3.Get(context.Background(), "/invalid-path")
-	assert.Error(t, err)
-	assert.Empty(t, g3)
+	t.Run("ip-api - /invalid-path", func(t *testing.T) {
+		// Use Client & URL from the local test server
+		c := NewIPAPIClient(server.URL, server.Client(), &logger)
+		g, err := c.Get(context.Background(), "/invalid-path")
+		assert.Error(t, err)
+		assert.Empty(t, g)
+	})
+
+	t.Run("ip-api - /3.3.3.3", func(t *testing.T) {
+		// Use Client & URL from the local test server
+		c := NewIPAPIClient(server.URL, server.Client(), &logger)
+		g, err := c.Get(context.Background(), "/3.3.3.3")
+		assert.Error(t, err)
+		assert.Empty(t, g)
+	})
+
+	t.Run("ip-api - invalid url", func(t *testing.T) {
+		// Use Client & URL from the local test server
+		c := NewIPAPIClient("invalidUrl", server.Client(), &logger)
+		g, err := c.Get(context.Background(), "/")
+		assert.Error(t, err)
+		assert.Empty(t, g)
+	})
+
 }
 
 func TestIPAPIClientStatus(t *testing.T) {
