@@ -142,3 +142,20 @@ func TestInMemoryDBGet(t *testing.T) {
 		})
 	}
 }
+
+func TestInMemoryDBStatus(t *testing.T) {
+	m := NewInMemoryDB()
+	var wg sync.WaitGroup
+	ch := make(chan error, 1)
+
+	wg.Add(1)
+	go m.Status(context.Background(), &wg, ch)
+	wg.Wait()
+
+	err := <-ch
+
+	if err != nil {
+		t.Errorf("inMemoryDB.Get() error = %v, wantErr %v", err, false)
+		return
+	}
+}

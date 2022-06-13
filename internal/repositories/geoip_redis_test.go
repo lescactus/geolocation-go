@@ -86,6 +86,7 @@ func TestRedisDBSave(t *testing.T) {
 	type fields struct {
 		client *redis.Client
 		cache  *cache.Cache
+		keyTTL time.Duration
 	}
 	type args struct {
 		ctx   context.Context
@@ -99,7 +100,7 @@ func TestRedisDBSave(t *testing.T) {
 	}{
 		{
 			name:    "Save ",
-			fields:  fields{client: redis.NewClient(&redis.Options{Addr: s.Addr()}), cache: cache.New(&cache.Options{Redis: client})},
+			fields:  fields{client: redis.NewClient(&redis.Options{Addr: s.Addr()}), cache: cache.New(&cache.Options{Redis: client}), keyTTL: time.Hour},
 			args:    args{ctx: context.Background(), geoip: &models.GeoIP{IP: "1.1.1.1"}},
 			wantErr: false,
 		},
@@ -113,7 +114,7 @@ func TestRedisDBSave(t *testing.T) {
 
 			err := r.Save(tt.args.ctx, tt.args.geoip)
 			assert.True(t, s.Exists(tt.args.geoip.IP))
-			assert.Equal(t, 24*time.Hour, s.TTL(tt.args.geoip.IP))
+			assert.Equal(t, tt.fields.keyTTL, s.TTL(tt.args.geoip.IP))
 
 			if tt.wantErr == false {
 				assert.NoError(t, err)
