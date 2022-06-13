@@ -15,10 +15,12 @@ import (
 func TestNewRedisDB(t *testing.T) {
 	type args struct {
 		connstring string
+		ttl        time.Duration
 	}
 	tests := []struct {
 		name    string
 		args    args
+		wantTTL time.Duration
 		wantErr bool
 	}{
 		{
@@ -29,16 +31,25 @@ func TestNewRedisDB(t *testing.T) {
 		{
 			name:    "Valid connection string - redis://localhost:6379",
 			args:    args{connstring: "redis://localhost:6379"},
+			wantTTL: DefaultKeyTTL,
+			wantErr: false,
+		},
+		{
+			name:    "Valid connection string - TTL 1h - redis://localhost:6379",
+			args:    args{connstring: "redis://localhost:6379", ttl: time.Hour},
+			wantTTL: time.Hour,
 			wantErr: false,
 		},
 		{
 			name:    "Valid connection string - redis://user:pass@localhost:6379/1",
 			args:    args{connstring: "redis://user:pass@localhost:6379/1"},
+			wantTTL: DefaultKeyTTL,
 			wantErr: false,
 		},
 		{
 			name:    "Valid connection string - redis://user:pass@localhost:6379/1?dial_timeout=3&db=1&read_timeout=6s&max_retries=2",
 			args:    args{connstring: "redis://user:pass@localhost:6379/1?dial_timeout=3&db=1&read_timeout=6s&max_retries=2"},
+			wantTTL: DefaultKeyTTL,
 			wantErr: false,
 		},
 		{
@@ -54,9 +65,14 @@ func TestNewRedisDB(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			_, err := NewRedisDB(tt.args.connstring)
+			r, err := NewRedisDB(tt.args.connstring, tt.args.ttl)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("NewRedisDB() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+
+			if (err == nil) && (tt.wantTTL != r.keyTTL) {
+				t.Errorf("NewRedisDB() error = %v, wantTTL %v", err, tt.wantTTL)
 				return
 			}
 		})

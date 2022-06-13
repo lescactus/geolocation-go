@@ -87,6 +87,8 @@ To retrieve the country code and country name of the given IP address, `geolocat
 
 * `REDIS_CONNECTION_STRING` (default value `redis://localhost:6379`). Connection string to connect to Redis. The format is the following: `"redis://<user>:<pass>@<host>:<port>/<db>"`.
 
+* `REDIS_KEY_TTL` (default `24h`). TTL of a redis key: Time before the key saved in redis will expire.
+
 * `GEOLOCATION_API` (default value `ip-api`). Define which geolocation API to use to retrieve geo IP information. Available options are:
        - [`ip-api`](https://ip-api.com/)
 

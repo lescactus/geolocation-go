@@ -37,7 +37,9 @@ func main() {
 	mdb := repositories.NewInMemoryDB()
 
 	// Create redis database client
-	rdb, err := repositories.NewRedisDB(cfg.GetString("REDIS_CONNECTION_STRING"))
+	rdb, err := repositories.NewRedisDB(
+		cfg.GetString("REDIS_CONNECTION_STRING"),
+		cfg.GetDuration("REDIS_KEY_TTL"))
 	if err != nil {
 		log.Fatalln(err)
 	}

@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	KeyTTL = 24 * time.Hour
+	DefaultKeyTTL = 24 * time.Hour
 )
 
 // Prometheus metrics
@@ -40,9 +40,10 @@ var (
 type redisDB struct {
 	client *redis.Client
 	cache  *cache.Cache
+	keyTTL time.Duration
 }
 
-func NewRedisDB(connstring string) (*redisDB, error) {
+func NewRedisDB(connstring string, ttl time.Duration) (*redisDB, error) {
 	opt, err := redis.ParseURL(connstring)
 	if err != nil {
 		return nil, fmt.Errorf("error: failed to parse redis url: %w", err)
@@ -53,9 +54,14 @@ func NewRedisDB(connstring string) (*redisDB, error) {
 		Redis: client,
 	})
 
+	if ttl == 0 {
+		ttl = DefaultKeyTTL
+	}
+
 	return &redisDB{
 		client: client,
 		cache:  cache,
+		keyTTL: ttl,
 	}, nil
 }
 
@@ -64,7 +70,7 @@ func (r *redisDB) Save(ctx context.Context, geoip *models.GeoIP) error {
 		Ctx:   ctx,
 		Key:   geoip.IP,
 		Value: geoip,
-		TTL:   KeyTTL,
+		TTL:   r.keyTTL,
 	}); err != nil {
 		// Increment Prometheus counter
 		redisItemFailedSaved.Inc()
