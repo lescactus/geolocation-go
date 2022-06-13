@@ -71,6 +71,7 @@ func (config *Config) setDefaults() {
 
 	// Redis configuration
 	config.SetDefault("REDIS_CONNECTION_STRING", "redis://localhost:6379")
+	config.SetDefault("REDIS_KEY_TTL", 24*time.Hour)
 
 	// Set default IP Geolocation API
 	config.SetDefault("GEOLOCATION_API", "ip-api") // Available: "ipapi"
