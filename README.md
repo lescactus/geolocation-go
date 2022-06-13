@@ -126,12 +126,12 @@ To install the dashboard, go to "Menu" > "Create" > "Import" > "Upload json file
 
 <details>
 <summary>Click to expand</summary>
-![Grafana 01 screenshot](.docs/grafana-01.png)
+![Grafana-01-screenshot](https://raw.githubusercontent.com/lescactus/geolocation-go/master/.docs/grafana-01.png)
 </details>
 
 ## TODO
 
-* [ ] 404 and 405 custom handler
+* [x] 404 and 405 custom handler
 
 * [ ] Provide APM & tracing 
 
