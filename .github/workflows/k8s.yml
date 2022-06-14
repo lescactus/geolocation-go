@@ -106,7 +106,7 @@ jobs:
         run: |
           kubectl patch deployments.apps geolocationmock-go \
             --type=json \
-            --patch '[{"op":"replace","path":"/spec/template/spec/containers/0/args","value":["-provider","ipbase"]}]'
+            --patch '[{"op":"replace","path":"/spec/template/spec/containers/0/args","value":["-provider","ipbase","-e2e"]}]'
 
           kubectl set env deploy/geolocation-go \
             -e GEOLOCATION_API=ipbase \
