@@ -7,6 +7,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"reflect"
+	"sync"
 	"testing"
 	"time"
 
@@ -31,32 +32,32 @@ func TestNewNewIPBaseClient(t *testing.T) {
 		{
 			name: "Empty base URL - empty apikey - empty http client",
 			args: args{},
-			want: &IPBaseClient{BaseURL: DefaultBaseURL},
+			want: &IPBaseClient{BaseURL: DefaultBaseURL, StatusURL: DefaultStatusURL},
 		},
 		{
 			name: "Non empty base URL - empty apikey - empty http client",
 			args: args{baseURL: "http://localhost:8080"},
-			want: &IPBaseClient{BaseURL: "http://localhost:8080"},
+			want: &IPBaseClient{BaseURL: "http://localhost:8080", StatusURL: DefaultStatusURL},
 		},
 		{
 			name: "Non empty base URL - non empty apikey - empty http client",
 			args: args{baseURL: "http://localhost:8080", apikey: "someapikey"},
-			want: &IPBaseClient{BaseURL: "http://localhost:8080", apiKey: "someapikey"},
+			want: &IPBaseClient{BaseURL: "http://localhost:8080", StatusURL: DefaultStatusURL, apiKey: "someapikey"},
 		},
 		{
 			name: "Non empty base URL - non empty apikey - non empty http client",
 			args: args{baseURL: "http://localhost:8080", apikey: "someapikey", client: &http.Client{Timeout: 5 * time.Second}},
-			want: &IPBaseClient{BaseURL: "http://localhost:8080", apiKey: "someapikey", Client: &http.Client{Timeout: 5 * time.Second}},
+			want: &IPBaseClient{BaseURL: "http://localhost:8080", StatusURL: DefaultStatusURL, apiKey: "someapikey", Client: &http.Client{Timeout: 5 * time.Second}},
 		},
 		{
 			name: "Empty base URL - empty apikey - non empty http client",
 			args: args{client: &http.Client{Timeout: 5 * time.Second}},
-			want: &IPBaseClient{BaseURL: DefaultBaseURL, Client: &http.Client{Timeout: 5 * time.Second}},
+			want: &IPBaseClient{BaseURL: DefaultBaseURL, StatusURL: DefaultStatusURL, Client: &http.Client{Timeout: 5 * time.Second}},
 		},
 		{
 			name: "Empty base URL - non empty apikey - non empty http client",
 			args: args{apikey: "someapikey", client: &http.Client{Timeout: 5 * time.Second}},
-			want: &IPBaseClient{BaseURL: DefaultBaseURL, apiKey: "someapikey", Client: &http.Client{Timeout: 5 * time.Second}},
+			want: &IPBaseClient{BaseURL: DefaultBaseURL, StatusURL: DefaultStatusURL, apiKey: "someapikey", Client: &http.Client{Timeout: 5 * time.Second}},
 		},
 	}
 	for _, tt := range tests {
@@ -87,7 +88,6 @@ func TestIPBaseClientGet(t *testing.T) {
 				w.Header().Add("Content-Length", "50")
 				w.Write(nil)
 			}
-
 
 			ip := q.Get("ip")
 
@@ -171,4 +171,64 @@ func TestIPBaseClientGet(t *testing.T) {
 		assert.Empty(t, g)
 	})
 
+}
+
+func TestIPBaseClientStatus(t *testing.T) {
+	// Start local http server
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/":
+			w.Write([]byte(`ok`))
+		case "/v2/status":
+			w.Write([]byte(`{"quotas":{"month":{"total":150,"used":2,"remaining":148}}}`))
+		default:
+			w.WriteHeader(404)
+			w.Write([]byte(`ko`))
+		}
+	}))
+
+	// Close the http server
+	defer server.Close()
+
+	var wg sync.WaitGroup
+
+	wg.Add(4)
+
+	t.Run("ipbase status - /v2/status", func(t *testing.T) {
+		ch := make(chan error, 1)
+		// Use Client & URL from the local test server
+		c := NewIPBaseClient(server.URL, "", server.Client(), &logger)
+		c.StatusURL = fmt.Sprintf("%s/v2/status", server.URL)
+		c.Status(context.Background(), &wg, ch)
+		assert.NoError(t, <-ch)
+	})
+
+	t.Run("ipbase status - invalid url - 01", func(t *testing.T) {
+		ch := make(chan error, 1)
+		// string([]byte{0x7f}) is a control character which will make NewRequestWithContext()
+		// throw an error.
+		c := NewIPBaseClient(string([]byte{0x7f}), "", server.Client(), &logger)
+		c.StatusURL = fmt.Sprintf("%s/v2/status", string([]byte{0x7f}))
+		c.Status(context.Background(), &wg, ch)
+		assert.Error(t, <-ch)
+	})
+
+	t.Run("ipbase status - invalid url - 02", func(t *testing.T) {
+		ch := make(chan error, 1)
+		c := NewIPBaseClient("_invalidUrl_", "", server.Client(), &logger)
+		c.StatusURL = fmt.Sprintf("%s/v2/status", "_invalidUrl_")
+		c.Status(context.Background(), &wg, ch)
+		assert.Error(t, <-ch)
+	})
+
+	t.Run("ipbase status - /404", func(t *testing.T) {
+		ch := make(chan error, 1)
+		// Use Client & URL from the local test server
+		c := NewIPBaseClient(server.URL, "", server.Client(), &logger)
+		c.StatusURL = fmt.Sprintf("%s/404", server.URL)
+		c.Status(context.Background(), &wg, ch)
+		assert.Error(t, <-ch)
+	})
+
+	wg.Wait()
 }

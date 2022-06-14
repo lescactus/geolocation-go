@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/lescactus/geolocation-go/internal/models"
@@ -16,7 +17,8 @@ import (
 )
 
 const (
-	DefaultBaseURL = "https://api.ipbase.com/v2/info?ip="
+	DefaultBaseURL   = "https://api.ipbase.com/v2/info?ip="
+	DefaultStatusURL = "https://api.ipbase.com/v2/status"
 )
 
 // Prometheus metrics
@@ -33,10 +35,11 @@ var (
 
 // IPBaseClient is an http client for the https://api.ipbase.com/ API.
 type IPBaseClient struct {
-	BaseURL string
-	apiKey  string
-	Client  *http.Client
-	Logger  *zerolog.Logger
+	BaseURL   string
+	StatusURL string
+	apiKey    string
+	Client    *http.Client
+	Logger    *zerolog.Logger
 }
 
 // IPBaseResponse represents the json response of the ipbase.com API
@@ -125,7 +128,7 @@ func NewIPBaseClient(baseURL, apikey string, client *http.Client, logger *zerolo
 	if baseURL == "" {
 		baseURL = DefaultBaseURL
 	}
-	return &IPBaseClient{BaseURL: baseURL, apiKey: apikey, Client: client, Logger: logger}
+	return &IPBaseClient{BaseURL: baseURL, StatusURL: DefaultStatusURL, apiKey: apikey, Client: client, Logger: logger}
 }
 
 func (c *IPBaseClient) Get(ctx context.Context, ip string) (*models.GeoIP, error) {
@@ -197,4 +200,33 @@ func (c *IPBaseClient) Get(ctx context.Context, ip string) (*models.GeoIP, error
 	}
 
 	return g, nil
+}
+
+// Status will retrieve the status of ipbase.com API.
+// It will simply send a GET request to the status URL.
+// ref: https://ipbase.com/docs/status
+func (c *IPBaseClient) Status(ctx context.Context, wg *sync.WaitGroup, ch chan error) {
+	defer wg.Done()
+
+	// Building http request
+	req, err := http.NewRequestWithContext(ctx, "GET", c.StatusURL, nil)
+	if err != nil {
+		ch <- fmt.Errorf("error: error while building http request to %s: %w", c.StatusURL, err)
+		return
+	}
+
+	// Send http request
+	resp, err := c.Client.Do(req)
+	if err != nil {
+		ch <- fmt.Errorf("error: error while sending http request to %s: %w", c.StatusURL, err)
+		return
+	}
+
+	// Ensure the response code is 200 OK
+	if resp.StatusCode != 200 {
+		ch <- fmt.Errorf("error: http response code is not 200 for http request %s: %d", c.StatusURL, resp.StatusCode)
+		return
+	}
+
+	ch <- nil
 }
