@@ -1,5 +1,5 @@
 name: "Bootstrap service"
-description: "Bootstrap a Kubernetes cluster with kind and execute skaffold "
+description: "Bootstrap a Kubernetes cluster with kind and execute skaffold"
 runs:
   using: "composite"
   steps:

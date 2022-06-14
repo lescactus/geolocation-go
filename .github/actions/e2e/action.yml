@@ -1,0 +1,22 @@
+name: "Run e2e tests"
+description: "Deploy the e2e test suites in k8s"
+runs:
+  using: "composite"
+  steps:
+    - name: e2e
+      uses: hiberbee/github-action-skaffold@1.18.0
+      with:
+        command: run
+        filename: skaffold-e2e.yaml
+
+    - name: e2e wait
+      shell: bash
+      run: |
+        kubectl wait --timeout=20s --for=condition=Complete -l app=e2e job
+        kubectl wait --timeout=20s --for=condition=Complete -l app=e2e-go job
+
+    - name: e2e results
+      shell: bash
+      run: |
+        kubectl logs -l 'job-name in (e2e, e2e-go)' --prefix --tail=-1
+      if: ${{ always() }}

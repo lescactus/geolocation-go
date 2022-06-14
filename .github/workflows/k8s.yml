@@ -19,21 +19,8 @@ jobs:
       - name: Setup Kubernetes and deploy container
         uses: ./.github/actions/k8s
 
-      - name: e2e
-        uses: hiberbee/github-action-skaffold@1.18.0
-        with:
-          command: run
-          filename: skaffold-e2e.yaml
-
-      - name: e2e wait
-        run: |
-          kubectl wait --timeout=20s --for=condition=Complete -l app=e2e job
-          kubectl wait --timeout=20s --for=condition=Complete -l app=e2e-go job
-
-      - name: e2e results
-        run: |
-          kubectl logs -l 'job-name in (e2e, e2e-go)' --prefix --tail=-1
-        if: ${{ always() }}
+      - name: Run e2e tests
+        uses: ./.github/actions/e2e
   
 
   e2e-ipbase:
@@ -72,18 +59,5 @@ jobs:
           kubectl rollout status deployment geolocation-go
           kubectl rollout status deployment geolocationmock-go
 
-      - name: e2e
-        uses: hiberbee/github-action-skaffold@1.18.0
-        with:
-          command: run
-          filename: skaffold-e2e.yaml
-
-      - name: e2e wait
-        run: |
-          kubectl wait --timeout=20s --for=condition=Complete -l app=e2e job
-          kubectl wait --timeout=20s --for=condition=Complete -l app=e2e-go job
-
-      - name: e2e results
-        run: |
-          kubectl logs -l 'job-name in (e2e, e2e-go)' --prefix --tail=-1
-        if: ${{ always() }}
+      - name: Run e2e tests
+        uses: ./.github/actions/e2e
