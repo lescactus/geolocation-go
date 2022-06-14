@@ -114,8 +114,8 @@ func (c *IPAPIClient) Get(ctx context.Context, ip string) (*models.GeoIP, error)
 	err = json.Unmarshal(body, &r)
 	if err != nil {
 		c.Logger.Error().Str("req_id", req_id.String()).
-			Msg(fmt.Sprintf("error while unmarshalling http request to %s: %s", c.BaseURL+ip, err))
-		return nil, fmt.Errorf("error: error while unmarshalling http request to %s: %w", c.BaseURL+ip, err)
+			Msg(fmt.Sprintf("error while unmarshalling http response from %s: %s", c.BaseURL+ip, err))
+		return nil, fmt.Errorf("error: error while unmarshalling http response from %s: %w", c.BaseURL+ip, err)
 	}
 
 	// Map the IPAPIResponse into a models.GeoIP
