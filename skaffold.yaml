@@ -12,6 +12,11 @@ build:
   tagPolicy:
     dateTime:
       format: 2006-01-02_15-04-05.999_MST
+# Allow running unit tests before a run
+test:
+  - image: geolocation-go
+    custom:
+    - command: go test ./...
 deploy:
   kubectl:
     manifests:

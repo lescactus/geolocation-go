@@ -166,7 +166,6 @@ func TestIPBaseClientGet(t *testing.T) {
 	t.Run("ipbase - /nil", func(t *testing.T) {
 		c := NewIPBaseClient(fmt.Sprintf("%s/v2/info?ip=", server.URL), "nil", server.Client(), &logger)
 		g, err := c.Get(context.Background(), "")
-		fmt.Println(err)
 		assert.Error(t, err)
 		assert.Empty(t, g)
 	})
