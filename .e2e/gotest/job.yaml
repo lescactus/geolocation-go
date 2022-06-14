@@ -11,5 +11,12 @@ spec:
       - image: e2e-go
         name: e2e-go
         resources: {}
+        # command:
+        #   - "sh"
+        #   - "-c"
+        #   - "sleep 999999999"
+        # env:
+        #   - name: REDIS_CONNECTION_STRING
+        #     value: redis://redis:6379
       restartPolicy: Never
   backoffLimit: 0
