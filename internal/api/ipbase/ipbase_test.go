@@ -76,10 +76,18 @@ func TestIPBaseClientGet(t *testing.T) {
 			w.Write([]byte(`ok`))
 		case "/v2/info":
 			q := r.URL.Query()
-			if q.Get("apikey") == "" {
+
+			switch q.Get("apikey") {
+			case "":
 				w.WriteHeader(401)
 				w.Write([]byte(`Missing API key`))
+			case "nil":
+				// Says returned content is 50 but actuaklly send nil
+				// resulting in ioutil.ReadAll() returning an error.
+				w.Header().Add("Content-Length", "50")
+				w.Write(nil)
 			}
+
 
 			ip := q.Get("ip")
 
@@ -92,6 +100,12 @@ func TestIPBaseClientGet(t *testing.T) {
 				w.Write([]byte(`thisisnotjson`))
 			}
 
+		case "/nil":
+			// Says returned content is 50 but actuaklly send nil
+			// resulting in ioutil.ReadAll() returning an error.
+			w.Header().Add("Content-Length", "50")
+			w.Write(nil)
+
 		default:
 			w.WriteHeader(404)
 			w.Write([]byte(`ko`))
@@ -103,42 +117,58 @@ func TestIPBaseClientGet(t *testing.T) {
 
 	t.Run("ipbase - /v2/info?ip=1.1.1.1", func(t *testing.T) {
 		// Use Client & URL from the local test server
-		c1 := NewIPBaseClient(fmt.Sprintf("%s/v2/info?ip=", server.URL), "someapikey", server.Client(), &logger)
-		g1, err := c1.Get(context.Background(), "1.1.1.1")
+		c := NewIPBaseClient(fmt.Sprintf("%s/v2/info?ip=", server.URL), "someapikey", server.Client(), &logger)
+		g, err := c.Get(context.Background(), "1.1.1.1")
 		assert.NoError(t, err)
-		assert.NotEmpty(t, g1)
+		assert.NotEmpty(t, g)
 	})
 
 	t.Run("ipbase - /v2/info?ip=2.2.2.2", func(t *testing.T) {
 		// Use Client & URL from the local test server
-		c2 := NewIPBaseClient(fmt.Sprintf("%s/v2/info?ip=", server.URL), "someapikey", server.Client(), &logger)
-		g2, err := c2.Get(context.Background(), "2.2.2.2")
+		c := NewIPBaseClient(fmt.Sprintf("%s/v2/info?ip=", server.URL), "someapikey", server.Client(), &logger)
+		g, err := c.Get(context.Background(), "2.2.2.2")
 		assert.NoError(t, err)
-		assert.NotEmpty(t, g2)
+		assert.NotEmpty(t, g)
 	})
 
 	t.Run("ipbase - /invalid-path", func(t *testing.T) {
 		// Use Client & URL from the local test server
-		c3 := NewIPBaseClient(fmt.Sprintf("%s/v2/info?ip=", server.URL), "someapikey", server.Client(), &logger)
-		g3, err := c3.Get(context.Background(), "/invalid-path")
+		c := NewIPBaseClient(fmt.Sprintf("%s/invalid-path", server.URL), "someapikey", server.Client(), &logger)
+		g, err := c.Get(context.Background(), "")
 		assert.Error(t, err)
-		assert.Empty(t, g3)
+		assert.Empty(t, g)
 	})
 
 	t.Run("ipbase - /v2/info?ip=3.3.3.3", func(t *testing.T) {
 		// Use Client & URL from the local test server
-		c4 := NewIPBaseClient(fmt.Sprintf("%s/v2/info?ip=", server.URL), "someapikey", server.Client(), &logger)
-		g4, err := c4.Get(context.Background(), "3.3.3.3")
+		c := NewIPBaseClient(fmt.Sprintf("%s/v2/info?ip=", server.URL), "someapikey", server.Client(), &logger)
+		g, err := c.Get(context.Background(), "3.3.3.3")
 		assert.Error(t, err)
-		assert.Empty(t, g4)
+		assert.Empty(t, g)
 	})
 
-	t.Run("ipbase - invalid url", func(t *testing.T) {
-		// Use Client & URL from the local test server
-		c4 := NewIPBaseClient("invalidUrl", "someapikey", server.Client(), &logger)
-		g4, err := c4.Get(context.Background(), "1.1.1.1")
+	t.Run("ipbase - invalid url - 01", func(t *testing.T) {
+		// string([]byte{0x7f}) is a control character which will make NewRequestWithContext()
+		// throw an error.
+		c := NewIPBaseClient(string([]byte{0x7f}), "someapikey", server.Client(), &logger)
+		g, err := c.Get(context.Background(), "1.1.1.1")
 		assert.Error(t, err)
-		assert.Empty(t, g4)
+		assert.Empty(t, g)
+	})
+
+	t.Run("ipbase - invalid url - 02", func(t *testing.T) {
+		c := NewIPBaseClient("_invalidUrl_", "someapikey", server.Client(), &logger)
+		g, err := c.Get(context.Background(), "1.1.1.1")
+		assert.Error(t, err)
+		assert.Empty(t, g)
+	})
+
+	t.Run("ipbase - /nil", func(t *testing.T) {
+		c := NewIPBaseClient(fmt.Sprintf("%s/v2/info?ip=", server.URL), "nil", server.Client(), &logger)
+		g, err := c.Get(context.Background(), "")
+		fmt.Println(err)
+		assert.Error(t, err)
+		assert.Empty(t, g)
 	})
 
 }
