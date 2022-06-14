@@ -21,7 +21,7 @@ jobs:
 
       - name: Run e2e tests
         uses: ./.github/actions/e2e
-  
+
 
   e2e-ipbase:
     runs-on: ubuntu-latest
