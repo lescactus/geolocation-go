@@ -140,7 +140,7 @@ func (c *IPBaseClient) Get(ctx context.Context, ip string) (*models.GeoIP, error
 	urlRedacted := fmt.Sprintf("%s%s&apikey=%s&language=en", c.BaseURL, ip, "xxxxxx")
 
 	// Building http request
-	c.Logger.Trace().Str("req_id", req_id.String()).Msg("building http request to " + urlRedacted + ip)
+	c.Logger.Trace().Str("req_id", req_id.String()).Msg("building http request to " + urlRedacted)
 	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 	if err != nil {
 		c.Logger.Error().Str("req_id", req_id.String()).
@@ -149,7 +149,7 @@ func (c *IPBaseClient) Get(ctx context.Context, ip string) (*models.GeoIP, error
 	}
 
 	// Send http request
-	c.Logger.Debug().Str("req_id", req_id.String()).Msg("sending http request to " + urlRedacted + ip)
+	c.Logger.Debug().Str("req_id", req_id.String()).Msg("sending http request to " + urlRedacted)
 	resp, err := c.Client.Do(req)
 	if err != nil {
 		c.Logger.Error().Str("req_id", req_id.String()).

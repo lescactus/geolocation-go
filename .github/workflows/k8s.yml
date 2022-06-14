@@ -113,8 +113,8 @@ jobs:
             -e IPBASE_BASE_URL=http://geolocationmock-go/ \
             -e IPBASE_API_KEY="fakeapikey"
         
-          kubectl wait --timeout=20s --for=condition=Available deployment/geolocationmock-go
-          kubectl wait --timeout=20s --for=condition=Available deployment/geolocation-go
+          kubectl rollout status deployment geolocation-go
+          kubectl rollout status deployment geolocationmock-go
 
       - name: e2e
         uses: hiberbee/github-action-skaffold@1.18.0
