@@ -10,7 +10,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  e2e:
+  e2e-ipapi:
     runs-on: ubuntu-latest
 
     steps:
@@ -40,6 +40,81 @@ jobs:
         uses: hiberbee/github-action-skaffold@1.18.0
         with:
           command: run
+
+      - name: e2e
+        uses: hiberbee/github-action-skaffold@1.18.0
+        with:
+          command: run
+          filename: skaffold-e2e.yaml
+
+      - name: e2e wait
+        run: |
+          kubectl wait --timeout=20s --for=condition=Complete -l app=e2e job
+          kubectl wait --timeout=20s --for=condition=Complete -l app=e2e-go job
+
+      - name: e2e results
+        run: |
+          kubectl logs -l 'job-name in (e2e, e2e-go)' --prefix --tail=-1
+        if: ${{ always() }}
+  
+
+  e2e-ipbase:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Setup Kubernetes
+        uses: engineerd/setup-kind@v0.5.0
+        with:
+          version: v0.11.1
+          image: kindest/node:v1.20.7
+     
+      - name: Debug
+        run: |
+          kubectl cluster-info
+          kubectl get pods -A
+          echo "current-context:" $(kubectl config current-context)
+          echo "environment-kubeconfig:" ${KUBECONFIG}
+      
+      - name: Cache skaffold image builds & config
+        uses: actions/cache@v2
+        with:
+          path: ~/.skaffold/
+          key: fixed
+        if: ${{ always() }}
+      
+      - name: Skaffold run
+        uses: hiberbee/github-action-skaffold@1.18.0
+        with:
+          command: run
+
+      - name: Clone mock repository
+        uses: actions/checkout@v3
+        with:
+          repository: lescactus/geolocationmock-go
+          ref: master
+          path: mock
+      
+      - name: Build and run mock server
+        uses: hiberbee/github-action-skaffold@1.18.0
+        with:
+          command: run
+          working-directory: mock
+
+      - name: Set mock server provider to ipbase
+        run: |
+          kubectl patch deployments.apps geolocationmock-go \
+            --type=json \
+            --patch '[{"op":"replace","path":"/spec/template/spec/containers/0/args","value":["-provider","ipbase"]}]'
+
+          kubectl set env deploy/geolocation-go \
+            -e GEOLOCATION_API=ipbase \
+            -e IPBASE_BASE_URL=http://geolocationmock-go/ \
+            -e IPBASE_API_KEY="fakeapikey"
+        
+          kubectl wait --timeout=20s --for=condition=Available deployment/geolocationmock-go
+          kubectl wait --timeout=20s --for=condition=Available deployment/geolocation-go
 
       - name: e2e
         uses: hiberbee/github-action-skaffold@1.18.0
