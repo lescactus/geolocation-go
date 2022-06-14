@@ -74,10 +74,14 @@ func (config *Config) setDefaults() {
 	config.SetDefault("REDIS_KEY_TTL", 24*time.Hour)
 
 	// Set default IP Geolocation API
-	config.SetDefault("GEOLOCATION_API", "ip-api") // Available: "ipapi"
+	config.SetDefault("GEOLOCATION_API", "ip-api") // Available: "ipapi", "ipbase"
 
 	// Configuration for ip-api.com API
 	config.SetDefault("IP_API_BASE_URL", "http://ip-api.com/json/") // https isn't available for free usage
+
+	// Configuration for ipbase.com API
+	config.SetDefault("IPBASE_BASE_URL", "https://api.ipbase.com/v2/info/?ip=")
+	config.SetDefault("IPBASE_API_KEY", "")
 
 	// Set default http client configuration
 	config.SetDefault("HTTP_CLIENT_TIMEOUT", 15*time.Second)

@@ -11,6 +11,7 @@ import (
 	"github.com/justinas/alice"
 	"github.com/lescactus/geolocation-go/internal/api"
 	"github.com/lescactus/geolocation-go/internal/api/ipapi"
+	"github.com/lescactus/geolocation-go/internal/api/ipbase"
 	"github.com/lescactus/geolocation-go/internal/config"
 	"github.com/lescactus/geolocation-go/internal/controllers"
 	"github.com/lescactus/geolocation-go/internal/logger"
@@ -55,6 +56,9 @@ func main() {
 	case "ip-api":
 		// Create ip-api client
 		rApi = ipapi.NewIPAPIClient(cfg.GetString("IP_API_BASE_URL"), httpClient, logger)
+	case "ipbase":
+		// Create ipbase client
+		rApi = ipbase.NewIPBaseClient(cfg.GetString("IPBASE_BASE_URL"), cfg.GetString("IPBASE_API_KEY"), httpClient, logger)
 	default:
 		// Create ip-api client by default
 		rApi = ipapi.NewIPAPIClient(cfg.GetString("IP_API_BASE_URL"), httpClient, logger)
