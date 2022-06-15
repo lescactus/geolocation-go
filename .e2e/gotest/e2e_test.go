@@ -23,22 +23,22 @@ type GeoIP struct {
 	Longitude   float64 `json:"longitude,omitempty"`
 }
 
-const defaultBaseUrl = "http://127.0.0.1:8080"
-
 var (
 	baseUrl         = flag.String("baseurl", "http://127.0.0.1:8080", "Base URL of geolocation-go service")
+	metricsUrl      = flag.String("metricsurl", "http://127.0.0.1:8080/metrics", "Metrics URL of the geolocation-go service")
 	redisConnString = flag.String("redisconnstr", "redis://localhost:6379", "Redis connection string")
 
 	rdb *redis.Client
 )
 
-func TestE2E(t *testing.T) {
+func setup() {
 	flag.Parse()
 	setupRedisClient()
+	resetRedis()
+}
 
-	if *baseUrl == "" {
-		*baseUrl = defaultBaseUrl
-	}
+func TestE2E(t *testing.T) {
+	setup()
 
 	tests := []struct {
 		name   string
@@ -103,6 +103,34 @@ func TestE2E(t *testing.T) {
 			want:   []byte(`{"status":"error","msg":"405 method not allowed"}`),
 			code:   http.StatusMethodNotAllowed,
 		},
+		{
+			name:   "PATCH - method not allowed - " + *baseUrl + "/rest/v1/4.4.4.4",
+			url:    "" + *baseUrl + "/rest/v1/4.4.4.4",
+			method: "PATCH",
+			want:   []byte(`{"status":"error","msg":"405 method not allowed"}`),
+			code:   http.StatusMethodNotAllowed,
+		},
+		{
+			name:   "DELETE - method not allowed - " + *baseUrl + "/rest/v1/4.4.4.4",
+			url:    "" + *baseUrl + "/rest/v1/4.4.4.4",
+			method: "DELETE",
+			want:   []byte(`{"status":"error","msg":"405 method not allowed"}`),
+			code:   http.StatusMethodNotAllowed,
+		},
+		{
+			name:   "CONNECT - method not allowed - " + *baseUrl + "/rest/v1/4.4.4.4",
+			url:    "" + *baseUrl + "/rest/v1/4.4.4.4",
+			method: "CONNECT",
+			want:   []byte(`{"status":"error","msg":"405 method not allowed"}`),
+			code:   http.StatusMethodNotAllowed,
+		},
+		{
+			name:   "TRACE - method not allowed - " + *baseUrl + "/rest/v1/4.4.4.4",
+			url:    "" + *baseUrl + "/rest/v1/4.4.4.4",
+			method: "TRACE",
+			want:   []byte(`{"status":"error","msg":"405 method not allowed"}`),
+			code:   http.StatusMethodNotAllowed,
+		},
 	}
 
 	client := &http.Client{Timeout: 5 * time.Second}
@@ -120,7 +148,6 @@ func TestE2E(t *testing.T) {
 			var geoip *GeoIP
 			data, err := ioutil.ReadAll(resp.Body)
 
-			
 			assert.NoError(t, err)
 			assert.Equal(t, tt.want, data)
 			assert.Equal(t, tt.code, resp.StatusCode)
@@ -158,13 +185,17 @@ func setupRedisClient() {
 	rdb = redis.NewClient(opt)
 }
 
+func resetRedis() {
+	rdb.FlushAll(context.Background())
+}
+
 func getIP(url string) string {
 	s := strings.Split(url, "/")
 	return s[len(s)-1]
 }
 
 func isInRedis(key string) (bool, error) {
-	val, err := rdb.Get(context.TODO(), key).Result()
+	val, err := rdb.Get(context.Background(), key).Result()
 	switch {
 	case err == redis.Nil:
 		return false, err
