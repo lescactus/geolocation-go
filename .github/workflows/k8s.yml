@@ -21,6 +21,8 @@ jobs:
 
       - name: Run e2e tests
         uses: ./.github/actions/e2e
+        with:
+          filename: skaffold-e2e.yaml
 
 
   e2e-ipbase:
@@ -28,7 +30,7 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
-      
+
       - name: Setup Kubernetes and deploy container
         uses: ./.github/actions/k8s
 
@@ -38,7 +40,7 @@ jobs:
           repository: lescactus/geolocationmock-go
           ref: master
           path: mock
-      
+
       - name: Build and run mock server
         uses: hiberbee/github-action-skaffold@1.18.0
         with:
@@ -61,3 +63,26 @@ jobs:
 
       - name: Run e2e tests
         uses: ./.github/actions/e2e
+        with:
+          filename: skaffold-e2e.yaml
+
+  e2e-nometrics:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup Kubernetes and deploy container
+        uses: ./.github/actions/k8s
+
+      - name: Disable publishing metrics
+        run: |
+          kubectl set env deploy/geolocation-go \
+            -e PROMETHEUS=false
+
+          kubectl rollout status deployment geolocation-go
+
+      - name: Run e2e tests
+        uses: ./.github/actions/e2e
+        with:
+          filename: skaffold-e2e.nometrics.yaml

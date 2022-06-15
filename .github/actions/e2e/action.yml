@@ -1,5 +1,10 @@
 name: "Run e2e tests"
 description: "Deploy the e2e test suites in k8s"
+inputs:
+  filename:
+    description: Path or URL to the Skaffold config file
+    required: true
+    default: skaffold.yaml
 runs:
   using: "composite"
   steps:
@@ -7,7 +12,7 @@ runs:
       uses: hiberbee/github-action-skaffold@1.18.0
       with:
         command: run
-        filename: skaffold-e2e.yaml
+        filename: ${{ inputs.filename }}
 
     - name: e2e wait
       shell: bash
