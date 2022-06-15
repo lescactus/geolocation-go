@@ -114,7 +114,7 @@ func TestWithoutMetricsEnabled(t *testing.T) {
 
 		data, err := ioutil.ReadAll(resp.Body)
 		assert.Equal(t, http.StatusNotFound, resp.StatusCode)
-		assert.Empty(t, data)
+		assert.Equal(t, data, []byte(`{"status":"error","msg":"404 page not found"}`))
 		assert.NoError(t, err)
 	})
 }
