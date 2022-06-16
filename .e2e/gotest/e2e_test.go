@@ -26,6 +26,7 @@ type GeoIP struct {
 var (
 	baseUrl         = flag.String("baseurl", "http://127.0.0.1:8080", "Base URL of geolocation-go service")
 	metricsUrl      = flag.String("metricsurl", "http://127.0.0.1:8080/metrics", "Metrics URL of the geolocation-go service")
+	pprofUrl        = flag.String("pprofurl", "http://127.0.0.1:6060/debug/pprof/", "Pprof URL of the geolocation-go service")
 	redisConnString = flag.String("redisconnstr", "redis://localhost:6379", "Redis connection string")
 
 	rdb *redis.Client
