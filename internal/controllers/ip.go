@@ -120,7 +120,7 @@ func (h *BaseHandler) GetGeoIP(w http.ResponseWriter, r *http.Request) {
 			defer wg.Done()
 
 			// Retrieve the IP information from the redis database
-			_, err = h.RedisRepo.Get(ctx, ip)
+			_, err := h.RedisRepo.Get(ctx, ip)
 			if err != nil {
 				h.Logger.Debug().Str("req_id", req_id.String()).Msg("cache miss from redis database... Adding to cache")
 				if err := h.RedisRepo.Save(ctx, g); err != nil {
