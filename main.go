@@ -83,7 +83,7 @@ func main() {
 		logger.Info().Msg("Starting pprof server ...")
 		// start pprof server
 		go func() {
-			if err := http.ListenAndServe("localhost:6060", nil); err != nil {
+			if err := http.ListenAndServe(":6060", nil); err != nil {
 				logger.Fatal().Err(err).Msg("Startup pprof server failed")
 			}
 		}()

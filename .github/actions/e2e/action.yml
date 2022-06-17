@@ -17,8 +17,17 @@ runs:
     - name: e2e wait
       shell: bash
       run: |
-        kubectl wait --timeout=20s --for=condition=Complete -l app=e2e job
-        kubectl wait --timeout=20s --for=condition=Complete -l app=e2e-go job
+        kubectl wait --timeout=60s --for=condition=Complete -l app=e2e job
+        kubectl wait --timeout=60s --for=condition=Complete -l app=e2e-go job
+
+    - name: Debug
+      shell: bash
+      run: |
+        kubectl cluster-info
+        kubectl get pods -A
+        kubectl describe pod -l=app=e2e
+        kubectl describe pod -l=app=e2e-go
+      if: ${{ always() }}
 
     - name: e2e results
       shell: bash

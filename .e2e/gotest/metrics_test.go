@@ -2,10 +2,10 @@ package e2e
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
-	"os"
 	"testing"
 	"time"
 
@@ -23,9 +23,32 @@ func parseMF(r io.Reader) (map[string]*dto.MetricFamily, error) {
 	return mf, nil
 }
 
+func populateMetrics() error {
+	requests := []struct {
+		ip string
+	}{{ip: "1.1.1.1"},{ip: "2.2.2.2"},{ip: "3.3.3.3"},{ip: "4.4.4.4"},{ip: "5.5.5.5"},{ip: "6.6.6.6"},}
+
+	client := &http.Client{Timeout: 5 * time.Second}
+
+	for _, r := range requests {
+		req, err := http.NewRequest("GET", fmt.Sprintf("%s/rest/v1/%s", *baseUrl, r.ip), nil)
+		if err != nil {
+			return err
+		}
+
+		_, err = client.Do(req)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 func TestWithMetricsEnabled(t *testing.T) {
-	if os.Getenv("NO_METRICS") == "true" {
-		t.Skip("geolocation-go is running without metrics enabled. Skipping")
+	err := populateMetrics()
+	if err != nil {
+		t.Fatalf(err.Error())
 	}
 
 	client := &http.Client{Timeout: 5 * time.Second}
@@ -66,7 +89,7 @@ func TestWithMetricsEnabled(t *testing.T) {
 			{
 				name:    "in_memory_items_saved_total",
 				metric:  "in_memory_items_saved_total",
-				atLeast: 3,
+				atLeast: 6,
 			},
 			{
 				name:    "in_memory_items_read_total",
@@ -76,7 +99,7 @@ func TestWithMetricsEnabled(t *testing.T) {
 			{
 				name:    "redis_items_saved_total",
 				metric:  "redis_items_saved_total",
-				atLeast: 3,
+				atLeast: 6,
 			},
 			{
 				name:    "redis_items_read_total",
@@ -96,11 +119,7 @@ func TestWithMetricsEnabled(t *testing.T) {
 	})
 }
 
-func TestWithoutMetricsEnabled(t *testing.T) {
-	if os.Getenv("NO_METRICS") != "true" {
-		t.Skip("geolocation-go is running with metrics enabled. Skipping")
-	}
-
+func TestWithMetricsDisabled(t *testing.T) {
 	client := &http.Client{Timeout: 5 * time.Second}
 
 	t.Run("Scrape metrics page", func(t *testing.T) {

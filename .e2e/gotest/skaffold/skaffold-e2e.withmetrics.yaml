@@ -1,0 +1,21 @@
+apiVersion: skaffold/v2beta28
+kind: Config
+metadata:
+  name: e2e
+build:
+  local:
+    push: false
+  artifacts:
+  - image: e2e-go
+    docker:
+      dockerfile: .e2e/gotest/Dockerfile
+  tagPolicy:
+    dateTime:
+      format: 2006-01-02_15-04-05.999_MST
+deploy:
+  kubectl:
+    manifests:
+    - .e2e/curl/e2e.yaml
+  kustomize:
+    paths:
+      - .e2e/gotest/k8s/jobs/withmetrics

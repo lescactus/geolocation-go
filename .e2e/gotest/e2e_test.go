@@ -196,13 +196,8 @@ func getIP(url string) string {
 }
 
 func isInRedis(key string) (bool, error) {
-	val, err := rdb.Get(context.Background(), key).Result()
-	switch {
-	case err == redis.Nil:
-		return false, err
-	case err != nil:
-		return false, err
-	case val == "":
+	_, err := rdb.Get(context.Background(), key).Result()
+	if err != nil {
 		return false, err
 	}
 	return true, nil

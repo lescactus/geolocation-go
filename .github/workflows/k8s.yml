@@ -22,7 +22,7 @@ jobs:
       - name: Run e2e tests
         uses: ./.github/actions/e2e
         with:
-          filename: skaffold-e2e.yaml
+          filename: .e2e/gotest/skaffold/skaffold-e2e.yaml
 
 
   e2e-ipbase:
@@ -64,9 +64,30 @@ jobs:
       - name: Run e2e tests
         uses: ./.github/actions/e2e
         with:
-          filename: skaffold-e2e.yaml
+          filename: .e2e/gotest/skaffold/skaffold-e2e.yaml
 
-  e2e-nometrics:
+  e2e-withmetrics:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup Kubernetes and deploy container
+        uses: ./.github/actions/k8s
+
+      - name: Enable publishing metrics
+        run: |
+          kubectl set env deploy/geolocation-go \
+            -e PROMETHEUS=true
+
+          kubectl rollout status deployment geolocation-go
+
+      - name: Run e2e tests
+        uses: ./.github/actions/e2e
+        with:
+          filename: .e2e/gotest/skaffold/skaffold-e2e.withmetrics.yaml
+
+  e2e-withoutmetrics:
     runs-on: ubuntu-latest
 
     steps:
@@ -85,4 +106,46 @@ jobs:
       - name: Run e2e tests
         uses: ./.github/actions/e2e
         with:
-          filename: skaffold-e2e.nometrics.yaml
+          filename: .e2e/gotest/skaffold/skaffold-e2e.withoutmetrics.yaml
+  
+  e2e-withpprof:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup Kubernetes and deploy container
+        uses: ./.github/actions/k8s
+
+      - name: Enable pprof
+        run: |
+          kubectl set env deploy/geolocation-go \
+            -e PPROF=true
+
+          kubectl rollout status deployment geolocation-go
+
+      - name: Run e2e tests
+        uses: ./.github/actions/e2e
+        with:
+          filename: .e2e/gotest/skaffold/skaffold-e2e.withpprof.yaml
+
+  e2e-withoutpprof:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup Kubernetes and deploy container
+        uses: ./.github/actions/k8s
+
+      - name: Disable pprof
+        run: |
+          kubectl set env deploy/geolocation-go \
+            -e PPROF=false
+
+          kubectl rollout status deployment geolocation-go
+
+      - name: Run e2e tests
+        uses: ./.github/actions/e2e
+        with:
+          filename: .e2e/gotest/skaffold/skaffold-e2e.withoutpprof.yaml
