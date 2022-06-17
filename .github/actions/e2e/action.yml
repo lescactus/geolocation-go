@@ -25,8 +25,12 @@ runs:
       run: |
         kubectl cluster-info
         kubectl get pods -A
-        kubectl describe pod -l=app=e2e
-        kubectl describe pod -l=app=e2e-go
+        kubectl describe pod -l=job-name=e2e
+        kubectl describe pod -l=job-name=e2e-go
+        echo -e "\n\nRedis keys"
+        kubectl exec -t deployment/redis -- bash -c "redis-cli --scan --pattern '*'"
+        echo -e "\n\ngeolocation-go logs"
+        kubectl logs -l=app=geolocation-go --tail=-1
       if: ${{ always() }}
 
     - name: e2e results

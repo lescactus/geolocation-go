@@ -35,3 +35,9 @@ runs:
       uses: hiberbee/github-action-skaffold@1.18.0
       with:
         command: run
+
+    - name: Set log level  to trace
+      shell: bash
+      run: |
+        kubectl set env deploy/geolocation-go LOGGER_LOG_LEVEL=trace
+        kubectl rollout status deployment geolocation-go

@@ -161,10 +161,20 @@ func TestE2E(t *testing.T) {
 				assert.NoError(t, json.Unmarshal(data, &geoip))
 			}
 
-			// Ensure the key has been stored in redis successfully
+			// Ensure the key has been stored in redis successfully.
+			// As it is an asynchronous operation, using a retry allow
+			// to wait until the server has saved the key in redis.
 			if (tt.code == http.StatusOK) && (tt.method == "GET") {
-				ip := getIP(tt.url)
-				ok, err := isInRedis(ip)
+				var ok bool
+				var err error
+				for retry := 0; retry < 5; retry++ {
+					ip := getIP(tt.url)
+					ok, err = isInRedis(ip)
+					if ok {
+						break
+					}
+					time.Sleep(500 * time.Millisecond)
+				}
 				assert.Equal(t, true, ok)
 				assert.NoError(t, err)
 			} else {
