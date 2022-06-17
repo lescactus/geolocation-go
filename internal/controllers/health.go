@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"sync"
+	"time"
 )
 
 const (
@@ -44,7 +45,8 @@ func (h *BaseHandler) Healthz(w http.ResponseWriter, r *http.Request) {
 	chErrRedisRepoStatus := make(chan error, 1)
 	chErrRemoteIPAPIStatus := make(chan error, 1)
 
-	ctx := context.TODO()
+	ctx, cancel := context.WithTimeout(r.Context(), 2 * time.Second)
+	defer cancel()
 
 	wg.Add(3)
 
