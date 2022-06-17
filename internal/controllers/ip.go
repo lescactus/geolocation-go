@@ -49,7 +49,6 @@ func (h *BaseHandler) GetGeoIP(w http.ResponseWriter, r *http.Request) {
 	// been finished.
 	var wg sync.WaitGroup
 
-	// KEEP IT SIMPLE
 	// TODO: Implement custom errors
 
 	// Retrieve the IP information from the in-memory database
@@ -114,6 +113,21 @@ func (h *BaseHandler) GetGeoIP(w http.ResponseWriter, r *http.Request) {
 		}
 	} else {
 		h.Logger.Debug().Str("req_id", req_id.String()).Msg("cache hit from in-memory database")
+
+		// Verify whether the key is in redis, if no, add it
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+
+			// Retrieve the IP information from the redis database
+			_, err = h.RedisRepo.Get(ctx, ip)
+			if err != nil {
+				h.Logger.Debug().Str("req_id", req_id.String()).Msg("cache miss from redis database... Adding to cache")
+				if err := h.RedisRepo.Save(ctx, g); err != nil {
+					h.Logger.Error().Str("req_id", req_id.String()).Msg("fail to cache in redis database: " + err.Error())
+				}
+			}
+		}()
 	}
 
 	// Marshal the response in json format

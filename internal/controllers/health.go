@@ -45,7 +45,7 @@ func (h *BaseHandler) Healthz(w http.ResponseWriter, r *http.Request) {
 	chErrRedisRepoStatus := make(chan error, 1)
 	chErrRemoteIPAPIStatus := make(chan error, 1)
 
-	ctx, cancel := context.WithTimeout(r.Context(), 2 * time.Second)
+	ctx, cancel := context.WithTimeout(r.Context(), 2*time.Second)
 	defer cancel()
 
 	wg.Add(3)
