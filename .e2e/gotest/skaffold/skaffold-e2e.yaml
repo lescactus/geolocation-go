@@ -15,5 +15,7 @@ build:
 deploy:
   kubectl:
     manifests:
-    - .e2e/gotest/job.yaml
     - .e2e/curl/e2e.yaml
+  kustomize:
+    paths:
+      - .e2e/gotest/k8s/jobs/e2e

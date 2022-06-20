@@ -1,0 +1,21 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../base
+patchesStrategicMerge:
+- |-
+  apiVersion: batch/v1
+  kind: Job
+  metadata:
+    labels:
+      app: e2e-go
+    name: e2e-go
+  spec:
+    template:
+      spec:
+        containers:
+        - image: e2e-go
+          name: e2e-go
+          env:
+          - name: TEST
+            value: "TestWithMetricsEnabled"

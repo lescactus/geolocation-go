@@ -1,0 +1,43 @@
+name: "Bootstrap service"
+description: "Bootstrap a Kubernetes cluster with kind and execute skaffold"
+runs:
+  using: "composite"
+  steps:
+    - name: Setup Kubernetes
+      uses: engineerd/setup-kind@v0.5.0
+      with:
+        version: v0.11.1
+        image: kindest/node:v1.20.7
+     
+    - name: Debug
+      shell: bash
+      run: |
+        kubectl cluster-info
+        kubectl get pods -A
+        echo "current-context:" $(kubectl config current-context)
+        echo "environment-kubeconfig:" ${KUBECONFIG}
+    
+    - name: Deploy standalone redis
+      shell: bash
+      run: |
+        kubectl create deployment redis --image redis:6 --port 6379
+        kubectl expose deployment redis --port=6379 --target-port=6379 --name=redis
+        kubectl rollout status deployment redis
+    
+    - name: Cache skaffold image builds & config
+      uses: actions/cache@v2
+      with:
+        path: ~/.skaffold/
+        key: fixed
+      if: ${{ always() }}
+    
+    - name: Skaffold run
+      uses: hiberbee/github-action-skaffold@1.18.0
+      with:
+        command: run
+
+    - name: Set log level  to trace
+      shell: bash
+      run: |
+        kubectl set env deploy/geolocation-go LOGGER_LOG_LEVEL=trace
+        kubectl rollout status deployment geolocation-go

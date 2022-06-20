@@ -83,7 +83,7 @@ func main() {
 		logger.Info().Msg("Starting pprof server ...")
 		// start pprof server
 		go func() {
-			if err := http.ListenAndServe("localhost:6060", nil); err != nil {
+			if err := http.ListenAndServe(":6060", nil); err != nil {
 				logger.Fatal().Err(err).Msg("Startup pprof server failed")
 			}
 		}()
@@ -123,9 +123,10 @@ func main() {
 	r.Handler("GET", "/ready", c.ThenFunc(h.Healthz))
 	r.Handler("GET", "/alive", c.ThenFunc(h.Healthz))
 
-	// 404 and 405 custom handlers with middlewares
+	// OPTIONS method, 404 and 405 custom handlers with middlewares
 	r.NotFound = c.ThenFunc(h.NotFoundHandler)
 	r.MethodNotAllowed = c.ThenFunc(h.MethodNotAllowedHandler)
+	r.GlobalOPTIONS = c.ThenFunc(h.OptionsHandler)
 
 	// Start server
 	logger.Info().Msg("Starting server ...")

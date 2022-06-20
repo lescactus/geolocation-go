@@ -1,0 +1,27 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  labels:
+    app: e2e-go
+  name: e2e-go
+spec:
+  template:
+    spec:
+      containers:
+      - image: e2e-go
+        name: e2e-go
+        resources: {}
+        command: ["sh", "-c", "go test -v -run ^$(TEST)$ ./... -baseurl $(BASE_URL) -redisconnstr $(REDIS_CONNECTION_STRING) -metricsurl $(METRICS_URL) -pprofurl $(PPROF_URL)"]
+        env:
+          - name: TEST
+            value: "*"
+          - name: BASE_URL
+            value: http://geolocation-go
+          - name: REDIS_CONNECTION_STRING
+            value: redis://redis:6379
+          - name: METRICS_URL
+            value: "$(BASE_URL)/metrics"
+          - name: PPROF_URL
+            value: http://geolocation-go-pprof:6060/debug/pprof
+      restartPolicy: Never
+  backoffLimit: 0

@@ -42,3 +42,11 @@ func (h *BaseHandler) MethodNotAllowedHandler(w http.ResponseWriter, r *http.Req
 	w.WriteHeader(http.StatusMethodNotAllowed)
 	w.Write(resp)
 }
+
+// HandleOPTIONS is the custom http handler for OPTIONS requests.
+// It respond to the client with a 200 status code and set the
+// "Allow" http header.
+func (h *BaseHandler) OptionsHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Allow", "GET, OPTIONS")
+	w.WriteHeader(http.StatusOK)
+}

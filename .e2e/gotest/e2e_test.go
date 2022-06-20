@@ -1,13 +1,16 @@
 package e2e
 
 import (
+	"context"
 	"encoding/json"
+	"flag"
 	"io/ioutil"
 	"net/http"
+	"strings"
 	"testing"
 	"time"
-	"flag"
 
+	"github.com/go-redis/redis/v8"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -20,15 +23,23 @@ type GeoIP struct {
 	Longitude   float64 `json:"longitude,omitempty"`
 }
 
-const defaultBaseUrl = "http://127.0.0.1:8080"
+var (
+	baseUrl         = flag.String("baseurl", "http://127.0.0.1:8080", "Base URL of geolocation-go service")
+	metricsUrl      = flag.String("metricsurl", "http://127.0.0.1:8080/metrics", "Metrics URL of the geolocation-go service")
+	pprofUrl        = flag.String("pprofurl", "http://127.0.0.1:6060/debug/pprof/", "Pprof URL of the geolocation-go service")
+	redisConnString = flag.String("redisconnstr", "redis://localhost:6379", "Redis connection string")
 
-var baseUrl = flag.String("baseurl", "http://127.0.0.1:8080", "Base URL of geolocation-go service")
+	rdb *redis.Client
+)
+
+func setup() {
+	flag.Parse()
+	setupRedisClient()
+	resetRedis()
+}
 
 func TestE2E(t *testing.T) {
-	flag.Parse()
-	if *baseUrl == "" {
-		*baseUrl = defaultBaseUrl
-	}
+	setup()
 
 	tests := []struct {
 		name   string
@@ -73,9 +84,51 @@ func TestE2E(t *testing.T) {
 			code:   http.StatusNotFound,
 		},
 		{
-			name:   "method not allowed - " + *baseUrl + "/rest/v1/1.1.1.1",
-			url:    "" + *baseUrl + "/rest/v1/1.1.1.1",
+			name:   "OPTIONS - method allowed - " + *baseUrl + "/rest/v1/4.4.4.4",
+			url:    "" + *baseUrl + "/rest/v1/4.4.4.4",
+			method: "OPTIONS",
+			want:   []byte(``),
+			code:   http.StatusOK,
+		},
+		{
+			name:   "POST - method not allowed - " + *baseUrl + "/rest/v1/4.4.4.4",
+			url:    "" + *baseUrl + "/rest/v1/4.4.4.4",
 			method: "POST",
+			want:   []byte(`{"status":"error","msg":"405 method not allowed"}`),
+			code:   http.StatusMethodNotAllowed,
+		},
+		{
+			name:   "PUT - method not allowed - " + *baseUrl + "/rest/v1/4.4.4.4",
+			url:    "" + *baseUrl + "/rest/v1/4.4.4.4",
+			method: "PUT",
+			want:   []byte(`{"status":"error","msg":"405 method not allowed"}`),
+			code:   http.StatusMethodNotAllowed,
+		},
+		{
+			name:   "PATCH - method not allowed - " + *baseUrl + "/rest/v1/4.4.4.4",
+			url:    "" + *baseUrl + "/rest/v1/4.4.4.4",
+			method: "PATCH",
+			want:   []byte(`{"status":"error","msg":"405 method not allowed"}`),
+			code:   http.StatusMethodNotAllowed,
+		},
+		{
+			name:   "DELETE - method not allowed - " + *baseUrl + "/rest/v1/4.4.4.4",
+			url:    "" + *baseUrl + "/rest/v1/4.4.4.4",
+			method: "DELETE",
+			want:   []byte(`{"status":"error","msg":"405 method not allowed"}`),
+			code:   http.StatusMethodNotAllowed,
+		},
+		{
+			name:   "CONNECT - method not allowed - " + *baseUrl + "/rest/v1/4.4.4.4",
+			url:    "" + *baseUrl + "/rest/v1/4.4.4.4",
+			method: "CONNECT",
+			want:   []byte(`{"status":"error","msg":"405 method not allowed"}`),
+			code:   http.StatusMethodNotAllowed,
+		},
+		{
+			name:   "TRACE - method not allowed - " + *baseUrl + "/rest/v1/4.4.4.4",
+			url:    "" + *baseUrl + "/rest/v1/4.4.4.4",
+			method: "TRACE",
 			want:   []byte(`{"status":"error","msg":"405 method not allowed"}`),
 			code:   http.StatusMethodNotAllowed,
 		},
@@ -95,12 +148,67 @@ func TestE2E(t *testing.T) {
 
 			var geoip *GeoIP
 			data, err := ioutil.ReadAll(resp.Body)
+
 			assert.NoError(t, err)
 			assert.Equal(t, tt.want, data)
 			assert.Equal(t, tt.code, resp.StatusCode)
-			assert.Equal(t, "application/json", resp.Header.Get("Content-Type"), "Content-Type http header wasn't set to 'application/json'")
 			assert.NotEmpty(t, resp.Header.Get("X-Request-Id"), "X-Request-Id http header wasn't set")
-			assert.NoError(t, json.Unmarshal(data, &geoip))
+
+			if tt.method == "OPTIONS" {
+				assert.Equal(t, "GET, OPTIONS", resp.Header.Get("Allow"), "Allow http header wasn't set to 'GET, OPTIONS'")
+			} else {
+				assert.Equal(t, "application/json", resp.Header.Get("Content-Type"), "Content-Type http header wasn't set to 'application/json'")
+				assert.NoError(t, json.Unmarshal(data, &geoip))
+			}
+
+			// Ensure the key has been stored in redis successfully.
+			// As it is an asynchronous operation, using a retry allow
+			// to wait until the server has saved the key in redis.
+			if (tt.code == http.StatusOK) && (tt.method == "GET") {
+				var ok bool
+				var err error
+				for retry := 0; retry < 5; retry++ {
+					ip := getIP(tt.url)
+					ok, err = isInRedis(ip)
+					if ok {
+						break
+					}
+					time.Sleep(500 * time.Millisecond)
+				}
+				assert.Equal(t, true, ok)
+				assert.NoError(t, err)
+			} else {
+				ip := getIP(tt.url)
+				ok, err := isInRedis(ip)
+				assert.Equal(t, false, ok)
+				assert.Error(t, err)
+			}
 		})
 	}
+}
+
+func setupRedisClient() {
+	opt, err := redis.ParseURL(*redisConnString)
+	if err != nil {
+		panic(err)
+	}
+
+	rdb = redis.NewClient(opt)
+}
+
+func resetRedis() {
+	rdb.FlushAll(context.Background())
+}
+
+func getIP(url string) string {
+	s := strings.Split(url, "/")
+	return s[len(s)-1]
+}
+
+func isInRedis(key string) (bool, error) {
+	_, err := rdb.Get(context.Background(), key).Result()
+	if err != nil {
+		return false, err
+	}
+	return true, nil
 }
