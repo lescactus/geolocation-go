@@ -164,8 +164,9 @@ func BenchmarkInMemoryDBGet_EntryInMemoryDB(b *testing.B) {
 	m := NewInMemoryDB()
 	m.Save(context.Background(), &models.GeoIP{IP: "1.1.1.1"})
 
-	b.ResetTimer()
 	var ctx = context.Background()
+	b.ResetTimer()
+
 	for i := 0; i < b.N; i++ {
 		m.Get(ctx, "1.1.1.1")
 	}
@@ -175,8 +176,9 @@ func BenchmarkInMemoryDBGet_EntryNotInMemoryDB(b *testing.B) {
 	m := NewInMemoryDB()
 	m.Save(context.Background(), &models.GeoIP{IP: "1.1.1.1"})
 
-	b.ResetTimer()
 	var ctx = context.Background()
+	b.ResetTimer()
+
 	for i := 0; i < b.N; i++ {
 		m.Get(ctx, "2.2.2.2")
 	}
@@ -186,8 +188,9 @@ func BenchmarkInMemoryDBSave_EntryInMemoryDB(b *testing.B) {
 	m := NewInMemoryDB()
 	m.Save(context.Background(), &models.GeoIP{IP: "1.1.1.1"})
 
-	b.ResetTimer()
 	var ctx = context.Background()
+	b.ResetTimer()
+
 	for i := 0; i < b.N; i++ {
 		m.Save(ctx, &models.GeoIP{IP: "1.1.1.1"})
 	}
@@ -197,8 +200,9 @@ func BenchmarkInMemoryDBSave_EntryNotInMemoryDB(b *testing.B) {
 	m := NewInMemoryDB()
 	m.Save(context.Background(), &models.GeoIP{IP: "1.1.1.1"})
 
-	b.ResetTimer()
 	var ctx = context.Background()
+	b.ResetTimer()
+
 	for i := 0; i < b.N; i++ {
 		m.Save(ctx, &models.GeoIP{IP: "2.2.2.2"})
 	}

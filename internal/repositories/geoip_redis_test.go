@@ -2,6 +2,7 @@ package repositories
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
@@ -122,5 +123,21 @@ func TestRedisDBSave(t *testing.T) {
 				assert.Error(t, err)
 			}
 		})
+	}
+}
+
+func BenchmarkRedisDBSave(b *testing.B) {
+	s := miniredis.RunT(b)
+	//client := redis.NewClient(&redis.Options{Addr: s.Addr()})
+	r, err := NewRedisDB(fmt.Sprintf("redis://%s", s.Addr()), time.Hour)
+	if err != nil {
+		b.Error(err)
+	}
+
+	var ctx = context.Background()
+	b.ResetTimer()
+
+	for i := 0; i < b.N; i++ {
+		r.Save(ctx, &models.GeoIP{IP: "1.1.1.1"})
 	}
 }
