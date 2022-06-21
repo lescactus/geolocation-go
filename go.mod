@@ -9,7 +9,6 @@ require (
 	github.com/gorilla/handlers v1.5.1
 	github.com/julienschmidt/httprouter v1.3.0
 	github.com/justinas/alice v1.2.0
-	github.com/klauspost/compress v1.15.0 // indirect
 	github.com/prometheus/client_golang v1.12.2
 	github.com/prometheus/common v0.34.0 // indirect
 	github.com/rs/zerolog v1.26.1

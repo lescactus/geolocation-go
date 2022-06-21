@@ -37,8 +37,6 @@ func (h *BaseHandler) GetGeoIP(w http.ResponseWriter, r *http.Request) {
 		w.Write(resp)
 		return
 	}
-	// Propagate the url in all calls to logger
-	*h.Logger = h.Logger.With().Stringer("url", r.URL).Logger()
 
 	var req_ctx = r.Context()
 	var ctx = context.Background()
