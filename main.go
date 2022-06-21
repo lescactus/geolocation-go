@@ -17,6 +17,7 @@ import (
 	"github.com/lescactus/geolocation-go/internal/logger"
 	"github.com/lescactus/geolocation-go/internal/repositories"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/hlog"
 	metrics "github.com/slok/go-http-metrics/metrics/prometheus"
 	httpmetricsmiddleware "github.com/slok/go-http-metrics/middleware"
@@ -128,8 +129,31 @@ func main() {
 	r.MethodNotAllowed = c.ThenFunc(h.MethodNotAllowedHandler)
 	r.GlobalOPTIONS = c.ThenFunc(h.OptionsHandler)
 
+	// logger fields
+	*logger = logger.With().Str("svc", config.AppName).Logger()
+
 	// Start server
-	logger.Info().Msg("Starting server ...")
+	logger.Info().Msgf("Starting server on address %s ...", cfg.GetString("APP_ADDR"))
+	logger.Debug().
+		Dict("config", zerolog.Dict(). // Don't show redis connection string in case password is provided
+						Str("geolocation_api", cfg.GetString("GEOLOCATION_API")).
+						Dict("server_config", zerolog.Dict().
+							Dur("server_read_timeout", cfg.GetDuration("SERVER_READ_TIMEOUT")).
+							Dur("server_read_header_timeout", cfg.GetDuration("SERVER_READ_HEADER_TIMEOUT")).
+							Dur("server_write_timeout", cfg.GetDuration("SERVER_WRITE_TIMEOUT")),
+			).
+			Dict("logger_config", zerolog.Dict().
+				Str("log_level", cfg.GetString("LOGGER_LOG_LEVEL")).
+				Str("log_format", cfg.GetString("LOGGER_FORMAT")).
+				Str("logger_duration_field_unit", cfg.GetString("LOGGER_DURATION_FIELD_UNIT")),
+			).
+			Dict("prometheus_config", zerolog.Dict().
+				Bool("prometheus_enabled", cfg.GetBool("PROMETHEUS")).
+				Str("prometheus_path", cfg.GetString("PROMETHEUS_PATH")),
+			).
+			Bool("pprof_enabled", cfg.GetBool("PPROF")),
+		).
+		Msg("With config")
 	if err := s.ListenAndServe(); err != nil {
 		logger.Fatal().Err(err).Msg("Startup failed")
 	}
