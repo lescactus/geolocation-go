@@ -1,9 +1,13 @@
 package main
 
 import (
+	"context"
 	"log"
 	"net/http"
 	_ "net/http/pprof"
+	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
 	"github.com/gorilla/handlers"
@@ -133,28 +137,47 @@ func main() {
 	*logger = logger.With().Str("svc", config.AppName).Logger()
 
 	// Start server
-	logger.Info().Msgf("Starting server on address %s ...", cfg.GetString("APP_ADDR"))
-	logger.Debug().
-		Dict("config", zerolog.Dict(). // Don't show redis connection string in case password is provided
-						Str("geolocation_api", cfg.GetString("GEOLOCATION_API")).
-						Dict("server_config", zerolog.Dict().
-							Dur("server_read_timeout", cfg.GetDuration("SERVER_READ_TIMEOUT")).
-							Dur("server_read_header_timeout", cfg.GetDuration("SERVER_READ_HEADER_TIMEOUT")).
-							Dur("server_write_timeout", cfg.GetDuration("SERVER_WRITE_TIMEOUT")),
+	go func() {
+		logger.Info().Msgf("Starting server on address %s ...", cfg.GetString("APP_ADDR"))
+		logger.Debug().
+			Dict("config", zerolog.Dict(). // Don't show redis connection string in case password is provided
+							Str("geolocation_api", cfg.GetString("GEOLOCATION_API")).
+							Dict("server_config", zerolog.Dict().
+								Dur("server_read_timeout", cfg.GetDuration("SERVER_READ_TIMEOUT")).
+								Dur("server_read_header_timeout", cfg.GetDuration("SERVER_READ_HEADER_TIMEOUT")).
+								Dur("server_write_timeout", cfg.GetDuration("SERVER_WRITE_TIMEOUT")),
+				).
+				Dict("logger_config", zerolog.Dict().
+					Str("log_level", cfg.GetString("LOGGER_LOG_LEVEL")).
+					Str("log_format", cfg.GetString("LOGGER_FORMAT")).
+					Str("logger_duration_field_unit", cfg.GetString("LOGGER_DURATION_FIELD_UNIT")),
+				).
+				Dict("prometheus_config", zerolog.Dict().
+					Bool("prometheus_enabled", cfg.GetBool("PROMETHEUS")).
+					Str("prometheus_path", cfg.GetString("PROMETHEUS_PATH")),
+				).
+				Bool("pprof_enabled", cfg.GetBool("PPROF")),
 			).
-			Dict("logger_config", zerolog.Dict().
-				Str("log_level", cfg.GetString("LOGGER_LOG_LEVEL")).
-				Str("log_format", cfg.GetString("LOGGER_FORMAT")).
-				Str("logger_duration_field_unit", cfg.GetString("LOGGER_DURATION_FIELD_UNIT")),
-			).
-			Dict("prometheus_config", zerolog.Dict().
-				Bool("prometheus_enabled", cfg.GetBool("PROMETHEUS")).
-				Str("prometheus_path", cfg.GetString("PROMETHEUS_PATH")),
-			).
-			Bool("pprof_enabled", cfg.GetBool("PPROF")),
-		).
-		Msg("With config")
-	if err := s.ListenAndServe(); err != nil {
-		logger.Fatal().Err(err).Msg("Startup failed")
+			Msg("With config")
+		if err := s.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			logger.Fatal().Err(err).Msg("Startup failed")
+		}
+	}()
+
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM, syscall.SIGINT)
+
+	// Blocking until receiving a shutdown signal
+	sig := <-sigChan
+
+	logger.Info().Msgf("Server received %s signal. Shutting down...", sig)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer func() {
+		cancel()
+	}()
+
+	// Attempting to gracefully shutdown the server
+	if err := s.Shutdown(ctx); err != nil {
+		logger.Warn().Msg("Failed to gracefully shutdown the server")
 	}
 }
