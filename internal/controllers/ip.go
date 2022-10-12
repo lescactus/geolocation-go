@@ -30,7 +30,7 @@ func (h *BaseHandler) GetGeoIP(w http.ResponseWriter, r *http.Request) {
 	params := httprouter.ParamsFromContext(ctx)
 	ip := params.ByName("ip")
 	if !isIpv4(ip) {
-		h.Logger.Error().Str("req_id", req_id.String()).Msg("the provided IP is not a valid IPv4 address")
+		h.Logger.Error().Str("req_id", req_id.String()).Msg("the provided ip is not a valid ipv4 address")
 
 		e := NewErrorResponse("the provided ip is not a valid ipv4 address")
 		resp, _ := json.Marshal(e)
