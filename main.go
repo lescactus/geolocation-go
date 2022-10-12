@@ -16,6 +16,7 @@ import (
 	"github.com/lescactus/geolocation-go/internal/api"
 	"github.com/lescactus/geolocation-go/internal/api/ipapi"
 	"github.com/lescactus/geolocation-go/internal/api/ipbase"
+	"github.com/lescactus/geolocation-go/internal/chain"
 	"github.com/lescactus/geolocation-go/internal/config"
 	"github.com/lescactus/geolocation-go/internal/controllers"
 	"github.com/lescactus/geolocation-go/internal/logger"
@@ -50,6 +51,11 @@ func main() {
 		log.Fatalln(err)
 	}
 
+	// Create the cacher chain
+	chain := chain.New(logger)
+	chain.Add("in-memory", mdb)
+	chain.Add("redis", rdb)
+
 	// Create http client
 	httpClient := http.DefaultClient
 	httpClient.Timeout = cfg.GetDuration("HTTP_CLIENT_TIMEOUT")
@@ -71,7 +77,8 @@ func main() {
 
 	// Create http router, middleware manager and handler controller
 	r := httprouter.New()
-	h := controllers.NewBaseHandler(mdb, rdb, rApi, logger)
+	h := controllers.NewBaseHandler(chain, rApi, logger)
+	h.CacheChain = chain
 	c := alice.New()
 
 	// Create http server

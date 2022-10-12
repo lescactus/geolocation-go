@@ -38,14 +38,14 @@ To retrieve the country code and country name of the given IP address, `geolocat
                                               +------------------------+ |                       *
 +-------------+            (1)                |                        | |                       * Update in-memory cache
 |             |   GET /rest/v1/{ip}           |                        | |                       *
-|             +------------------------------>|                        | |      (3)              *
+|             +------------------------------>|                        | |      (3)              v
 |   Client    |                               |     geolocation-go     | +--------------> Redis lookup (optional)
 |             |          (5)                  |                        | |                       ^ 
 |             |<------------------------------+                        | |                       *
 +-------------+       200 - OK                |                        | |                       * Update Redis cache
                                               +------------------------+ |                       *
                                                                          |                       *
-                                                                         |      (4)              *
+                                                                         |      (4)              v
                                                                          +--------------> http://ip-api.com/json/{ip} lookup (optional)
 ```
 
@@ -90,10 +90,8 @@ To retrieve the country code and country name of the given IP address, `geolocat
 * `REDIS_KEY_TTL` (default `24h`). TTL of a redis key: Time before the key saved in redis will expire.
 
 * `GEOLOCATION_API` (default value `ip-api`). Define which geolocation API to use to retrieve geo IP information. Available options are:
-
-       * [`ip-api`](https://ip-api.com/)
-
-       * [`ipbase`](https://ipbase.com/)
+  * [`ip-api`](https://ip-api.com/)
+  * [`ipbase`](https://ipbase.com/)
 
 * `IP_API_BASE_URL` (default value: `http://ip-api.com/json/`). Base URL for the [`ip-api`](https://ip-api.com/) API. Note that https is not available with the free plan.
 

@@ -36,7 +36,7 @@ type InMemoryDBError struct {
 }
 
 func (err InMemoryDBError) Error() string {
-	return fmt.Sprintf("Error: %s %s", err.message, err.key)
+	return fmt.Sprintf("error: %s %s", err.message, err.key)
 }
 
 type inMemoryDB struct {
@@ -80,7 +80,7 @@ func (m *inMemoryDB) Get(ctx context.Context, ip string) (*models.GeoIP, error) 
 		// Increment Prometheus counter
 		inMemoryItemFailedRead.Inc()
 		return nil, &InMemoryDBError{
-			message: "error: no value found for key",
+			message: "no value found for key",
 			key:     ip,
 		}
 	}

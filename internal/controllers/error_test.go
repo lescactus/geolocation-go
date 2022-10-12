@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/julienschmidt/httprouter"
+	"github.com/lescactus/geolocation-go/internal/chain"
 	"github.com/lescactus/geolocation-go/internal/repositories"
 	"github.com/stretchr/testify/assert"
 )
@@ -62,9 +63,12 @@ func TestBaseHandlerNotFoundHandler(t *testing.T) {
 	mdb := repositories.NewInMemoryDB()
 	rdb := &RedisMock{}
 	a := &GeoAPIMock{}
+	c := chain.New(&logger)
+	c.Add("in-memory", mdb)
+	c.Add("redis", rdb)
 
 	// route registration
-	h := NewBaseHandler(mdb, rdb, a, &logger)
+	h := NewBaseHandler(c, a, &logger)
 	r.Handler("GET", "/rest/v1/:ip", http.HandlerFunc(http.HandlerFunc(h.GetGeoIP)))
 	r.NotFound = http.HandlerFunc(h.NotFoundHandler)
 
@@ -118,9 +122,12 @@ func TestBaseHandlerMethodNotAllowedHandler(t *testing.T) {
 	mdb := repositories.NewInMemoryDB()
 	rdb := &RedisMock{}
 	a := &GeoAPIMock{}
+	c := chain.New(&logger)
+	c.Add("in-memory", mdb)
+	c.Add("redis", rdb)
 
 	// route registration
-	h := NewBaseHandler(mdb, rdb, a, &logger)
+	h := NewBaseHandler(c, a, &logger)
 	r.Handler("GET", "/rest/v1/:ip", http.HandlerFunc(http.HandlerFunc(h.GetGeoIP)))
 	r.MethodNotAllowed = http.HandlerFunc(h.MethodNotAllowedHandler)
 
