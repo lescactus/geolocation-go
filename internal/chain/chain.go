@@ -10,6 +10,13 @@ import (
 	"github.com/rs/zerolog/hlog"
 )
 
+// Cache is a models.GeoIPRepository and is used within a
+// Chain.
+type Cache struct {
+	name       string
+	repository models.GeoIPRepository
+}
+
 // Chain acts as a list of GeoIPRepository.
 // It's goal is to provide a cache to read and write models.GeoIP
 // in a chained way: when requesting a read, the first GeoIPRepository
@@ -32,29 +39,42 @@ import (
 // 3. MySQL - fast but slower than redis
 //
 type Chain struct {
-	geoIPRepository map[string]models.GeoIPRepository
-	l               *zerolog.Logger
+	caches []Cache
+	l      *zerolog.Logger
 }
 
 // New will return a new empty chain.
 // It is then up to the caller to use the Add()
 // method to add GeoIPRepository to the chain.
 func New(l *zerolog.Logger) *Chain {
-	m := make(map[string]models.GeoIPRepository)
-	c := new(Chain)
-	c.geoIPRepository = m
-	c.l = l
-	return c
+	return &Chain{
+		l:      l,
+		caches: make([]Cache, 0),
+	}
 }
 
 // Add will add a models.GeoIPRepository to the chain.
 // Return an error if the GeoIPRepository is already present.
 func (c *Chain) Add(name string, g models.GeoIPRepository) error {
-	if _, ok := c.geoIPRepository[name]; ok {
-		return errors.New("error: GeoIPRepository already present in chain")
+	if g == nil {
+		return errors.New("error: GeoIPRepository cannot be nil")
 	}
 
-	c.geoIPRepository[name] = g
+	if len(c.caches) == 0 {
+		c.caches = append(c.caches, Cache{
+			name:       name,
+			repository: g,
+		})
+		return nil
+	}
+
+	for _, cache := range c.caches {
+		if cache.name == name {
+			return errors.New("error: GeoIPRepository already present in chain")
+		}
+	}
+
+	c.caches = append(c.caches, Cache{name: name, repository: g})
 
 	return nil
 }
@@ -73,19 +93,19 @@ func (c *Chain) Get(ctx context.Context, ip string) (*models.GeoIP, error) {
 
 	req_id := reqIDFromContext(ctx)
 
-	for name, repo := range c.geoIPRepository {
-		c.l.Trace().Str("req_id", req_id).Msgf("looking for %s in %s database from cache chain", ip, name)
+	for _, cache := range c.caches {
+		c.l.Trace().Str("req_id", req_id).Msgf("looking for %s in %s database from cache chain", ip, cache.name)
 
-		g, err = repo.Get(ctx, ip)
+		g, err = cache.repository.Get(ctx, ip)
 		if err != nil {
-			c.l.Debug().Str("req_id", req_id).Err(err).Msgf("cache miss from %s database", name)
-			cacheMiss = append(cacheMiss, name)
+			c.l.Debug().Str("req_id", req_id).Err(err).Msgf("cache miss from %s database", cache.name)
+			cacheMiss = append(cacheMiss, cache.name)
 		} else {
-			c.l.Debug().Str("req_id", req_id).Msgf("cache hit from %s database", name)
+			c.l.Debug().Str("req_id", req_id).Msgf("cache hit from %s database", cache.name)
 
 			// Update all caches with g if needed
 			if len(cacheMiss) > 0 {
-				go c.saveInCaches(ctx, g, cacheMiss)
+				go c.SaveInAllCaches(ctx, g)
 			}
 			return g, nil
 		}
@@ -94,19 +114,19 @@ func (c *Chain) Get(ctx context.Context, ip string) (*models.GeoIP, error) {
 	return nil, errors.New("couldn't find entry in cache chain")
 }
 
-// Statuses will call each GeoIPRepository Status() function concurrently and return errors
-// if any.
+// Statuses will call each GeoIPRepository Status() function concurrently
+// and return errors if any.
 func (c *Chain) Statuses(ctx context.Context) map[string]error {
 	var wg sync.WaitGroup
 
 	errors := make(map[string]error)
 
-	for name, repo := range c.geoIPRepository {
+	for _, cache := range c.caches {
 		c := make(chan error, 1)
 		wg.Add(1)
-		go repo.Status(ctx, &wg, c)
+		go cache.repository.Status(ctx, &wg, c)
 
-		errors[name] = <-c
+		errors[cache.name] = <-c
 	}
 	wg.Wait()
 
@@ -115,45 +135,25 @@ func (c *Chain) Statuses(ctx context.Context) map[string]error {
 
 // SaveInAllCaches will save geoip asynchronousely in all the caches from the chain.
 func (c *Chain) SaveInAllCaches(ctx context.Context, geoip *models.GeoIP) {
-	var caches = make([]string, 0, len(c.geoIPRepository))
-	for name := range c.geoIPRepository {
-		caches = append(caches, name)
-	}
-
 	req_id := reqIDFromContext(ctx)
-	c.l.Trace().Str("req_id", req_id).Msgf("preparing to update following caches: %+v", caches)
 
-	c.saveInCaches(ctx, geoip, caches)
-}
-
-// saveInCaches will save geoip asynchronousely in the given cache(s).
-func (c *Chain) saveInCaches(ctx context.Context, geoip *models.GeoIP, caches []string) {
 	var wg sync.WaitGroup
+	wg.Add(len(c.caches))
 
-	req_id := reqIDFromContext(ctx)
-
-	wg.Add(len(caches))
-
-	for _, name := range caches {
-		go func(name string) {
+	for _, cache := range c.caches {
+		go func(cache Cache) {
 			defer wg.Done()
 
-			c.l.Debug().Str("req_id", req_id).Msgf("updating cache %s with entry %s", name, geoip.IP)
-			if err := c.geoIPRepository[name].Save(ctx, geoip); err != nil {
-				c.l.Error().Str("req_id", req_id).Msgf("fail to cache in %s database: %s", name, err.Error())
+			c.l.Debug().Str("req_id", req_id).Msgf("updating cache %s with entry %s", cache.name, geoip.IP)
+			if err := cache.repository.Save(ctx, geoip); err != nil {
+				c.l.Error().Str("req_id", req_id).Msgf("fail to cache in %s database: %s", cache.name, err.Error())
 			} else {
-				c.l.Trace().Str("req_id", req_id).Msgf("cache %s updated with entry %s", name, geoip.IP)
+				c.l.Trace().Str("req_id", req_id).Msgf("cache %s updated with entry %s", cache.name, geoip.IP)
 			}
-
-		}(name)
+		}(cache)
 	}
 
 	wg.Wait()
-}
-
-// GeoIPRepositoryLen returns the lenght of the geoIPRepository map
-func (c *Chain) GeoIPRepositoryLen() int {
-	return len(c.geoIPRepository)
 }
 
 // reqIDFromContext extracts and returns the request id from

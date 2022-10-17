@@ -26,12 +26,12 @@ func TestNew(t *testing.T) {
 		{
 			name: "With logger",
 			args: args{&logger},
-			want: &Chain{geoIPRepository: make(map[string]models.GeoIPRepository), l: &logger},
+			want: &Chain{caches: make([]Cache, 0), l: &logger},
 		},
 		{
-			name: "With nil logger",
+			name: "Without logger",
 			args: args{nil},
-			want: &Chain{geoIPRepository: make(map[string]models.GeoIPRepository), l: nil},
+			want: &Chain{caches: make([]Cache, 0), l: nil},
 		},
 	}
 	for _, tt := range tests {
@@ -46,12 +46,9 @@ func TestNew(t *testing.T) {
 func TestChainAdd(t *testing.T) {
 	logger := zerolog.New(os.Stdout)
 
-	m := make(map[string]models.GeoIPRepository)
-	m["in-memory"] = repositories.NewInMemoryDB()
-
 	type fields struct {
-		geoIPRepository map[string]models.GeoIPRepository
-		l               *zerolog.Logger
+		caches []Cache
+		l      *zerolog.Logger
 	}
 	type args struct {
 		name string
@@ -64,29 +61,35 @@ func TestChainAdd(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name:    "Add nil",
-			fields:  fields{make(map[string]models.GeoIPRepository), &logger},
+			name:    "Add nil to empty chain",
+			fields:  fields{make([]Cache, 0), &logger},
 			args:    args{"", nil},
-			wantErr: false,
+			wantErr: true,
 		},
 		{
-			name:    "Add in-memory",
-			fields:  fields{make(map[string]models.GeoIPRepository), &logger},
+			name:    "Add non-nil to empty chain",
+			fields:  fields{make([]Cache, 0), &logger},
 			args:    args{"in-memory", repositories.NewInMemoryDB()},
 			wantErr: false,
 		},
 		{
-			name:    "Add already existing GeoIPRepository",
-			fields:  fields{m, &logger},
-			args:    args{"in-memory", repositories.NewInMemoryDB()},
+			name:    "Add non-nil to non-empty chain",
+			fields:  fields{append(([]Cache)(nil), Cache{"cache1", repositories.NewInMemoryDB()}), &logger},
+			args:    args{"cache2", repositories.NewInMemoryDB()},
+			wantErr: false,
+		},
+		{
+			name:    "Add existing cache to chain",
+			fields:  fields{append(([]Cache)(nil), Cache{"cache1", repositories.NewInMemoryDB()}), &logger},
+			args:    args{"cache1", repositories.NewInMemoryDB()},
 			wantErr: true,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			c := &Chain{
-				geoIPRepository: tt.fields.geoIPRepository,
-				l:               tt.fields.l,
+				caches: tt.fields.caches,
+				l:      tt.fields.l,
 			}
 			if err := c.Add(tt.args.name, tt.args.g); (err != nil) != tt.wantErr {
 				t.Errorf("Chain.Add() error = %v, wantErr %v", err, tt.wantErr)
@@ -126,45 +129,6 @@ func TestReqIDFromContext(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := reqIDFromContext(tt.args.ctx); got != tt.want {
 				t.Errorf("reqIDFromContext() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
-func TestChainGeoIPRepositoryLen(t *testing.T) {
-	logger := zerolog.New(os.Stdout)
-
-	m := make(map[string]models.GeoIPRepository)
-	m["in-memory"] = repositories.NewInMemoryDB()
-
-	type fields struct {
-		geoIPRepository map[string]models.GeoIPRepository
-		l               *zerolog.Logger
-	}
-	tests := []struct {
-		name   string
-		fields fields
-		want   int
-	}{
-		{
-			name:   "Without GeoIPRepository",
-			fields: fields{make(map[string]models.GeoIPRepository), &logger},
-			want:   0,
-		},
-		{
-			name:   "With one GeoIPRepository",
-			fields: fields{m, &logger},
-			want:   1,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			c := &Chain{
-				geoIPRepository: tt.fields.geoIPRepository,
-				l:               tt.fields.l,
-			}
-			if got := c.GeoIPRepositoryLen(); got != tt.want {
-				t.Errorf("Chain.GeoIPRepositoryLen() = %v, want %v", got, tt.want)
 			}
 		})
 	}
