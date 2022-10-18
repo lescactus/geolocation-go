@@ -15,6 +15,8 @@ type GeoIP struct {
 	Longitude   float64 `json:"longitude,omitempty"`
 }
 
+// GeoIPRepository provides a way to retrieve GeoIP information
+// typically from a cache or a database.
 type GeoIPRepository interface {
 	Get(ctx context.Context, ip string) (*GeoIP, error)
 	Save(ctx context.Context, geoip *GeoIP) error

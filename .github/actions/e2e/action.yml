@@ -8,17 +8,25 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - name: e2e
+    - name: e2e-go
       uses: hiberbee/github-action-skaffold@1.18.0
       with:
         command: run
         filename: ${{ inputs.filename }}
 
-    - name: e2e wait
+    - name: e2e-go wait
       shell: bash
-      run: |
-        kubectl wait --timeout=60s --for=condition=Complete -l app=e2e job
-        kubectl wait --timeout=60s --for=condition=Complete -l app=e2e-go job
+      run: kubectl wait --timeout=60s --for=condition=Complete -l app=e2e-go job
+    
+    - name: e2e-curl
+      uses: hiberbee/github-action-skaffold@1.18.0
+      with:
+        command: run
+        filename: .e2e/gotest/skaffold/skaffold-e2e.curl.yaml
+    
+    - name: e2e-curl wait
+      shell: bash
+      run: kubectl wait --timeout=60s --for=condition=Complete -l app=e2e job
 
     - name: Debug
       shell: bash

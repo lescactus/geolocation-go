@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
-	"sync"
 	"time"
 )
 
@@ -19,84 +18,71 @@ const (
 // HealthzResponse represents the json response of a health endpoint.
 // It provides the status of the app dependencies.
 type HealthzResponse struct {
-	Status string `json:"status"`
-	Checks struct {
-		InMemoryRepoStatus string `json:"in_memory_database_status"`
-		RedisRepoStatus    string `json:"redis_database_status"`
-		RemoteIPAPIStatus  string `json:"remote_api_status"`
-	} `json:"checks"`
+	Status string             `json:"global_status"`
+	Checks []CacheHealthCheck `json:"checks"`
+}
+
+// CacheHealthCheck represents the health status of a cache.
+type CacheHealthCheck struct {
+	CacheName      string `json:"cache"`
+	CacheStatus    string `json:"status"`
+	CacheStatusMsg string `json:"msg"`
+}
+
+// newChecks convert a map of [string]error to a []HealthCheck
+func newChecks(m map[string]error) []CacheHealthCheck {
+	if len(m) <= 0 {
+		return []CacheHealthCheck{}
+	}
+
+	var c = make([]CacheHealthCheck, len(m))
+
+	i := 0
+	for name, err := range m {
+		var status string
+		var msg string
+		if err == nil {
+			status = HealthzOK
+			msg = "alive"
+		} else {
+			status = HealthzKO
+			msg = err.Error()
+		}
+
+		c[i] = CacheHealthCheck{
+			CacheName:      name,
+			CacheStatus:    status,
+			CacheStatusMsg: msg,
+		}
+
+		i++
+	}
+
+	return c
 }
 
 // Healthz provide a handler used for health checks.
-// TODO: Better implementation
+// It will verify the status of all the cache registries in the cache chain
+// and will always answer with a 200 http status code with a HealthzResponse.
 func (h *BaseHandler) Healthz(w http.ResponseWriter, r *http.Request) {
-	var wg sync.WaitGroup
-
-	var status string
-	var inMemoryRepoStatus string
-	var redisRepoStatus string
-	var remoteIPAPIStatus string
-
-	var errInMemoryRepo error
-	var errRedisRepo error
-	var errRemoteIPAPI error
-
-	chErrInMemoryRepoStatus := make(chan error, 1)
-	chErrRedisRepoStatus := make(chan error, 1)
-	chErrRemoteIPAPIStatus := make(chan error, 1)
-
 	ctx, cancel := context.WithTimeout(r.Context(), 2*time.Second)
 	defer cancel()
 
-	wg.Add(3)
+	errors := h.CacheChain.Statuses(ctx)
 
-	go h.InMemoryRepo.Status(ctx, &wg, chErrInMemoryRepoStatus)
-	go h.RedisRepo.Status(ctx, &wg, chErrRedisRepoStatus)
-	go h.RemoteIPAPI.Status(ctx, &wg, chErrRemoteIPAPIStatus)
-
-	wg.Wait()
-
-	errInMemoryRepo = <-chErrInMemoryRepoStatus
-	if errInMemoryRepo != nil {
-		inMemoryRepoStatus = HealthzKO
-	} else {
-		inMemoryRepoStatus = HealthzOK
-	}
-
-	errRedisRepo = <-chErrRedisRepoStatus
-	if errRedisRepo != nil {
-		redisRepoStatus = HealthzKO
-	} else {
-		redisRepoStatus = HealthzOK
-	}
-
-	errRemoteIPAPI = <-chErrRemoteIPAPIStatus
-	if errRemoteIPAPI != nil {
-		remoteIPAPIStatus = HealthzKO
-	} else {
-		remoteIPAPIStatus = HealthzOK
-	}
-
-	if (inMemoryRepoStatus != HealthzOK) || (redisRepoStatus != HealthzOK) || (remoteIPAPIStatus != HealthzOK) {
+	var status string
+	if hasErrors(errors) {
 		status = HealthzKO
 	} else {
 		status = HealthzOK
 	}
 
-	z := HealthzResponse{
+	health := HealthzResponse{
 		Status: status,
-		Checks: struct {
-			InMemoryRepoStatus string `json:"in_memory_database_status"`
-			RedisRepoStatus    string `json:"redis_database_status"`
-			RemoteIPAPIStatus  string `json:"remote_api_status"`
-		}{
-			InMemoryRepoStatus: inMemoryRepoStatus,
-			RedisRepoStatus:    redisRepoStatus,
-			RemoteIPAPIStatus:  remoteIPAPIStatus,
-		},
+		Checks: newChecks(errors),
 	}
 
-	resp, err := json.Marshal(&z)
+	resp, err := json.Marshal(&health)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
@@ -105,4 +91,14 @@ func (h *BaseHandler) Healthz(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	w.Header().Add("Content-Type", ContentTypeApplicationJSON)
 	w.Write(resp)
+}
+
+// hasErrors will return true if the map contains any error(s)
+func hasErrors(e map[string]error) bool {
+	for _, err := range e {
+		if err != nil {
+			return true
+		}
+	}
+	return false
 }

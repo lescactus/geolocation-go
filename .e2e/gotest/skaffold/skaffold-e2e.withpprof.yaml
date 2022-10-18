@@ -13,9 +13,6 @@ build:
     dateTime:
       format: 2006-01-02_15-04-05.999_MST
 deploy:
-  kubectl:
-    manifests:
-    - .e2e/curl/e2e.yaml
   kustomize:
     paths:
       - .e2e/gotest/k8s/jobs/withpprof

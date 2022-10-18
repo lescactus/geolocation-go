@@ -73,7 +73,7 @@ func TestE2E(t *testing.T) {
 			name:   "invalid path - " + *baseUrl + "/rest/v1/bla",
 			url:    "" + *baseUrl + "/rest/v1/bla",
 			method: "GET",
-			want:   []byte(`{"status":"error","msg":"the provided IP is not a valid IPv4 address"}`),
+			want:   []byte(`{"status":"error","msg":"the provided ip is not a valid ipv4 address"}`),
 			code:   http.StatusBadRequest,
 		},
 		{

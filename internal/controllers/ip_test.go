@@ -12,6 +12,7 @@ import (
 	"testing"
 
 	"github.com/julienschmidt/httprouter"
+	"github.com/lescactus/geolocation-go/internal/chain"
 	"github.com/lescactus/geolocation-go/internal/models"
 	"github.com/lescactus/geolocation-go/internal/repositories"
 	"github.com/rs/zerolog"
@@ -114,13 +115,13 @@ func TestGetGeoIP(t *testing.T) {
 		{
 			name: "valid path - /rest/v1/4.4.4.4",
 			path: "/rest/v1/4.4.4.4",
-			want: []byte(`{"status":"error","msg":"Couldn't retrieve geo IP information"}`),
+			want: []byte(`{"status":"error","msg":"couldn't get geo ip information"}`),
 			code: 500,
 		},
 		{
 			name: "invalid path - /rest/v1/bla",
 			path: "/rest/v1/bla",
-			want: []byte(`{"status":"error","msg":"the provided IP is not a valid IPv4 address"}`),
+			want: []byte(`{"status":"error","msg":"the provided ip is not a valid ipv4 address"}`),
 			code: 400,
 		},
 	}
@@ -131,9 +132,12 @@ func TestGetGeoIP(t *testing.T) {
 	mdb := repositories.NewInMemoryDB()
 	rdb := &RedisMock{}
 	a := &GeoAPIMock{}
+	c := chain.New(&logger)
+	c.Add("in-memory", mdb)
+	c.Add("redis", rdb)
 
 	// route registration
-	h := NewBaseHandler(mdb, rdb, a, &logger)
+	h := NewBaseHandler(c, a, &logger)
 	r.Handler("GET", "/rest/v1/:ip", http.HandlerFunc(http.HandlerFunc(h.GetGeoIP)))
 
 	for _, tt := range tests {
@@ -160,9 +164,12 @@ func BenchmarkGetGeoIP_EntryNotInMemoryDB_EntryInRedis(b *testing.B) {
 	// db
 	mdb := repositories.NewInMemoryDB()
 	rdb := &RedisMock{}
+	c := chain.New(&logger)
+	c.Add("in-memory", mdb)
+	c.Add("redis", rdb)
 
 	// route registration
-	h := NewBaseHandler(mdb, rdb, nil, &logger)
+	h := NewBaseHandler(c, nil, &logger)
 	r.Handler("GET", muxRoute, http.HandlerFunc(h.GetGeoIP))
 
 	req, _ := http.NewRequest("GET", route, nil)
@@ -182,9 +189,12 @@ func BenchmarkGetGeoIP_EntryNotInMemoryDB_EntryNotInRedis_EntryNotFoundByRemoteA
 	mdb := repositories.NewInMemoryDB()
 	rdb := &RedisMock{}
 	a := &GeoAPIMock{}
+	c := chain.New(&logger)
+	c.Add("in-memory", mdb)
+	c.Add("redis", rdb)
 
 	// route registration
-	h := NewBaseHandler(mdb, rdb, a, &logger)
+	h := NewBaseHandler(c, a, &logger)
 	r.Handler("GET", muxRoute, http.HandlerFunc(h.GetGeoIP))
 
 	req, _ := http.NewRequest("GET", route, nil)
@@ -204,9 +214,12 @@ func BenchmarkGetGeoIP_EntryNotInMemoryDB_EntryNotInRedis_EntryFoundByRemoteAPI(
 	mdb := repositories.NewInMemoryDB()
 	rdb := &RedisMock{}
 	a := &GeoAPIMock{}
+	c := chain.New(&logger)
+	c.Add("in-memory", mdb)
+	c.Add("redis", rdb)
 
 	// route registration
-	h := NewBaseHandler(mdb, rdb, a, &logger)
+	h := NewBaseHandler(c, a, &logger)
 	r.Handler("GET", muxRoute, http.HandlerFunc(h.GetGeoIP))
 
 	req, _ := http.NewRequest("GET", route, nil)
@@ -225,10 +238,13 @@ func BenchmarkGetGeoIP_EntryInMemoryDB_EntryInRedis(b *testing.B) {
 	// db
 	mdb := repositories.NewInMemoryDB()
 	rdb := &RedisMock{}
+	c := chain.New(&logger)
+	c.Add("in-memory", mdb)
+	c.Add("redis", rdb)
 	mdb.Save(context.Background(), &OneOneOneOne)
 
 	// route registration
-	h := NewBaseHandler(mdb, rdb, nil, &logger)
+	h := NewBaseHandler(c, nil, &logger)
 	r.Handler("GET", muxRoute, http.HandlerFunc(h.GetGeoIP))
 
 	req, _ := http.NewRequest("GET", route, nil)
