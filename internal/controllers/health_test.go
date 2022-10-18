@@ -2,7 +2,6 @@ package controllers
 
 import (
 	"errors"
-	"reflect"
 	"testing"
 )
 
@@ -113,7 +112,7 @@ func TestNewChecks(t *testing.T) {
 			},
 		},
 		{
-			name: "Map has two elements - no errors",
+			name: "Map has two elements - no error",
 			args: args{
 				m: map[string]error{
 					"one": nil,
@@ -138,11 +137,57 @@ func TestNewChecks(t *testing.T) {
 				{CacheName: "two", CacheStatus: HealthzKO, CacheStatusMsg: "two"},
 			},
 		},
+		{
+			name: "Map has three elements - no error",
+			args: args{
+				m: map[string]error{
+					"one":   nil,
+					"two":   nil,
+					"three": nil,
+				},
+			},
+			want: []CacheHealthCheck{
+				{CacheName: "one", CacheStatus: HealthzOK, CacheStatusMsg: "alive"},
+				{CacheName: "two", CacheStatus: HealthzOK, CacheStatusMsg: "alive"},
+				{CacheName: "three", CacheStatus: HealthzOK, CacheStatusMsg: "alive"},
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := newChecks(tt.args.m); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("NewChecks() = %v, want %v", got, tt.want)
+			got := newChecks(tt.args.m)
+
+			if len(got) != len(tt.want) {
+				t.Errorf("len(got) = %v, want %v", len(got), len(tt.want))
+			}
+
+			for name, err := range tt.args.m {
+				var c CacheHealthCheck
+				for _, v := range tt.want {
+					if name == v.CacheName {
+						c = v
+
+						if err != nil {
+							if v.CacheStatus != HealthzKO {
+								t.Errorf("Invalid cache status for %v: expected %v, got %v", v, HealthzKO, v.CacheStatus)
+							}
+							if v.CacheStatusMsg != err.Error() {
+								t.Errorf("Invalid cache status message for %v: expected %v, got %v", v, err.Error(), v.CacheStatusMsg)
+							}
+						} else {
+							if v.CacheStatus != HealthzOK {
+								t.Errorf("Invalid cache status for %v: expected %v, got %v", v, HealthzOK, v.CacheStatus)
+							}
+							if v.CacheStatusMsg != "alive" {
+								t.Errorf("Invalid cache status message for %v: expected %v, got %v", v, "alive", v.CacheStatusMsg)
+							}
+						}
+
+					}
+				}
+				if c == (CacheHealthCheck{}) {
+					t.Errorf("Missing CacheHealthCheck %v => %v", name, err)
+				}
 			}
 		})
 	}
