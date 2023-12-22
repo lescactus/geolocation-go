@@ -42,8 +42,9 @@ jobs:
           path: mock
 
       - name: Build and run mock server
-        uses: hiberbee/github-action-skaffold@1.18.0
+        uses: hiberbee/github-action-skaffold@1.27.0
         with:
+          skaffold-version: 2.9.0
           command: run
           working-directory: mock
 

@@ -6,8 +6,8 @@ runs:
     - name: Setup Kubernetes
       uses: engineerd/setup-kind@v0.5.0
       with:
-        version: v0.11.1
-        image: kindest/node:v1.20.7
+        version: v0.20.0
+        image: kindest/node:v1.27.3
      
     - name: Debug
       shell: bash
@@ -25,15 +25,16 @@ runs:
         kubectl rollout status deployment redis
     
     - name: Cache skaffold image builds & config
-      uses: actions/cache@v2
+      uses: actions/cache@v3
       with:
         path: ~/.skaffold/
         key: fixed
       if: ${{ always() }}
     
     - name: Skaffold run
-      uses: hiberbee/github-action-skaffold@1.18.0
+      uses: hiberbee/github-action-skaffold@1.27.0
       with:
+        skaffold-version: 2.9.0
         command: run
 
     - name: Set log level to trace
@@ -41,3 +42,13 @@ runs:
       run: |
         kubectl set env deploy/geolocation-go LOGGER_LOG_LEVEL=trace
         kubectl rollout status deployment geolocation-go
+
+    - name: Debug
+      shell: bash
+      run: |
+        kubectl cluster-info
+        kubectl get pods -A
+        kubectl describe pod -l=app=geolocation-go
+        echo -e "\n\ngeolocation-go logs"
+        kubectl logs -l=app=geolocation-go --tail=-1
+      if: ${{ always() }}
