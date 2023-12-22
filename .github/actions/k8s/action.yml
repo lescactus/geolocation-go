@@ -41,3 +41,13 @@ runs:
       run: |
         kubectl set env deploy/geolocation-go LOGGER_LOG_LEVEL=trace
         kubectl rollout status deployment geolocation-go
+
+    - name: Debug
+      shell: bash
+      run: |
+        kubectl cluster-info
+        kubectl get pods -A
+        kubectl describe pod -l=app=geolocation-go
+        echo -e "\n\ngeolocation-go logs"
+        kubectl logs -l=app=geolocation-go --tail=-1
+      if: ${{ always() }}
