@@ -11,6 +11,7 @@ runs:
     - name: e2e-go
       uses: hiberbee/github-action-skaffold@1.27.0
       with:
+        skaffold-version: 2.9.0
         command: run
         filename: ${{ inputs.filename }}
 
@@ -21,6 +22,7 @@ runs:
     - name: e2e-curl
       uses: hiberbee/github-action-skaffold@1.27.0
       with:
+        skaffold-version: 2.9.0
         command: run
         filename: .e2e/gotest/skaffold/skaffold-e2e.curl.yaml
     
