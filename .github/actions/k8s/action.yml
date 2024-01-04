@@ -23,7 +23,13 @@ runs:
         kubectl create deployment redis --image redis:6 --port 6379
         kubectl expose deployment redis --port=6379 --target-port=6379 --name=redis
         kubectl rollout status deployment redis
-    
+
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: "1.21"
+        cache: true
+
     - name: Cache skaffold image builds & config
       uses: actions/cache@v3
       with:
