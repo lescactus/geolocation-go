@@ -5,7 +5,7 @@ go 1.21
 toolchain go1.21.4
 
 require (
-	github.com/alicebob/miniredis/v2 v2.31.1
+	github.com/alicebob/miniredis/v2 v2.32.1
 	github.com/go-redis/cache/v8 v8.4.4
 	github.com/go-redis/redis/v8 v8.11.5
 	github.com/gorilla/handlers v1.5.2
@@ -48,7 +48,7 @@ require (
 	github.com/vmihailenco/go-tinylfu v0.2.2 // indirect
 	github.com/vmihailenco/msgpack/v5 v5.4.0 // indirect
 	github.com/vmihailenco/tagparser/v2 v2.0.0 // indirect
-	github.com/yuin/gopher-lua v1.1.0 // indirect
+	github.com/yuin/gopher-lua v1.1.1 // indirect
 	go.uber.org/atomic v1.9.0 // indirect
 	go.uber.org/multierr v1.9.0 // indirect
 	golang.org/x/exp v0.0.0-20230905200255-921286631fa9 // indirect
