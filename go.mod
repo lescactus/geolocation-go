@@ -11,7 +11,7 @@ require (
 	github.com/gorilla/handlers v1.5.2
 	github.com/julienschmidt/httprouter v1.3.0
 	github.com/justinas/alice v1.2.0
-	github.com/prometheus/client_golang v1.19.0
+	github.com/prometheus/client_golang v1.19.1
 	github.com/prometheus/common v0.53.0 // indirect
 	github.com/rs/xid v1.5.0
 	github.com/rs/zerolog v1.33.0
