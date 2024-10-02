@@ -1,4 +1,4 @@
-FROM golang:1.22 as build-env
+FROM golang:1.23 AS build-env
 
 ADD go.* /go/src/
 
