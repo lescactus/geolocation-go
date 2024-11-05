@@ -59,7 +59,7 @@ func TestE2E(t *testing.T) {
 			name:   "valid path - " + *baseUrl + "/rest/v1/2.2.2.2",
 			url:    "" + *baseUrl + "/rest/v1/2.2.2.2",
 			method: "GET",
-			want:   []byte(`{"ip":"2.2.2.2","country_code":"FR","country_name":"France","city":"Paris","latitude":48.8566,"longitude":2.35222}`),
+			want:   []byte(`{"ip":"2.2.2.2","country_code":"FR","country_name":"France","city":"Issy-les-Moulineaux","latitude":48.8309,"longitude":2.26582}`),
 			code:   http.StatusOK,
 		},
 		{
