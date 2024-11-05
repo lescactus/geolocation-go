@@ -26,7 +26,7 @@ func parseMF(r io.Reader) (map[string]*dto.MetricFamily, error) {
 func populateMetrics() error {
 	requests := []struct {
 		ip string
-	}{{ip: "1.1.1.1"},{ip: "2.2.2.2"},{ip: "3.3.3.3"},{ip: "4.4.4.4"},{ip: "5.5.5.5"},{ip: "6.6.6.6"},}
+	}{{ip: "1.1.1.1"}, {ip: "2.2.2.2"}, {ip: "3.3.3.3"}, {ip: "4.4.4.4"}, {ip: "5.5.5.5"}, {ip: "6.6.6.6"}}
 
 	client := &http.Client{Timeout: 5 * time.Second}
 
@@ -48,7 +48,7 @@ func populateMetrics() error {
 func TestWithMetricsEnabled(t *testing.T) {
 	err := populateMetrics()
 	if err != nil {
-		t.Fatalf(err.Error())
+		t.Fatal(err.Error())
 	}
 
 	client := &http.Client{Timeout: 5 * time.Second}
@@ -77,7 +77,7 @@ func TestWithMetricsEnabled(t *testing.T) {
 		data = append(data, '\n')
 		mf, err := parseMF(bytes.NewReader(data))
 		if err != nil {
-			t.Fatalf(err.Error())
+			t.Fatal(err.Error())
 		}
 		assert.NoError(t, err)
 
