@@ -12,7 +12,7 @@ require (
 	github.com/prometheus/client_golang v1.23.2
 	github.com/prometheus/common v0.66.1 // indirect
 	github.com/rs/xid v1.6.0
-	github.com/rs/zerolog v1.35.0
+	github.com/rs/zerolog v1.35.1
 	github.com/slok/go-http-metrics v0.13.0
 	github.com/spf13/viper v1.21.0
 	github.com/stretchr/testify v1.11.1
